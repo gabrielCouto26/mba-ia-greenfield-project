@@ -67,6 +67,22 @@ If any of these fails, the task is not done — fix the underlying issue before 
   - `dev` — integration branch; all feature/bugfix/hotfix branches start from `dev` and merge back into `dev`
   - When `dev` is stable, it is merged into `main`
 
+## Restricted Commands
+
+The following commands are **strictly forbidden** — never suggest, generate, or execute them under any circumstance:
+
+- `git push` (including `--force`, `--force-with-lease`, `-f`) — pushing to remote is always a manual user action
+- `git revert` — reverting commits requires explicit user decision
+- `git reset` (including `--hard`, `--soft`, `--mixed`) — destructive history rewrite
+- `git branch -d` / `git branch -D` — deleting branches
+- `git checkout --` / `git restore` — discarding uncommitted changes
+- `git clean` — removing untracked files
+- `git rebase` (interactive or otherwise) — rewriting history
+- `rm -rf` — recursive forced deletion of files or directories
+- Any command that force-overwrites or permanently deletes data without recovery
+
+If the user explicitly asks for one of these, explain the risk and ask for confirmation before proceeding. Never execute them autonomously.
+
 ## Testing Policy
 
 Every change must be tested. During development, run only the tests related to the modified code. Before finishing, always run the full test suite to ensure nothing is broken.
