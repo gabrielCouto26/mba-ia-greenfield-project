@@ -87,6 +87,31 @@ If the user explicitly asks for one of these, explain the risk and ask for confi
 
 Every change must be tested. During development, run only the tests related to the modified code. Before finishing, always run the full test suite to ensure nothing is broken.
 
+## Desafio — Fase 03: Upload e Processamento de Vídeos
+
+O diretório `desafio/` contém o enunciado completo do desafio de MBA. Leia esses arquivos ao iniciar qualquer trabalho nesta fase:
+
+| Arquivo | Conteúdo |
+|---|---|
+| `desafio/sobre.md` | Contexto geral do projeto e o que já existe (Fases 01–02) |
+| `desafio/escopo.md` | Escopo da Fase 03: capacidades a entregar e decisões em aberto (fila, upload 10GB, streaming, worker/FFmpeg, URLs únicas) |
+| `desafio/requisitos.md` | Requisitos detalhados: research → planejamento → implementação |
+| `desafio/workflow.md` | Pipeline de planejamento obrigatória: research → plan-context → plan-validate → plan-resolve → plan-build → implement, com os artefatos esperados em `docs/phases/phase-03-videos/` |
+| `desafio/regras.md` | Regras do projeto: Definition of Done, Docker, libs via context7, Git Flow, sufixos de teste |
+| `desafio/criterios-de-aceite.md` | Critérios de aceite (todos obrigatórios) e causas de reprovação automática |
+| `desafio/ordem-execucao.md` | Ordem sugerida: setup → research → planejamento → implementação SI a SI → fechamento |
+| `desafio/dicas-finais.md` | Dicas: upload 10GB é decisão de arquitetura, infra real no Compose, reuse padrões existentes |
+
+**Artefatos esperados da fase:**
+- `docs/decisions/technical-decisions-phase-03-videos.md` — decisões técnicas (research)
+- `docs/phases/phase-03-videos/context.md` — contexto consolidado
+- `docs/phases/phase-03-videos/validation.md` — validação (deve fechar em `clean`)
+- `docs/phases/phase-03-videos/library-refs.md` — libs fixadas via context7
+- `docs/phases/phase-03-videos/phase-03-videos.md` — plano executável (SIs, Technical Specs, Dependency Map, Deliverables)
+- `docs/phases/phase-03-videos/progress.md` — progresso da implementação
+
+**Restrição crítica:** nunca pule o workflow. Implementar sem os artefatos de research e planejamento é reprovação automática.
+
 ## Scope Limits
 
 - Work on **one feature, fix, or refactoring at a time** — do not mix scopes
