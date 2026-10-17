@@ -16,6 +16,7 @@ import {
 import type { JwtPayload } from '../../auth/auth.types';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { ApiErrorEnvelope } from '../../common/openapi/api-error-envelope.dto';
+import { CompleteUploadDto } from '../dto/complete-upload.dto';
 import { CreateVideoDto } from '../dto/create-video.dto';
 import { PresignPartDto } from '../dto/presign-part.dto';
 import { VideosService } from '../services/videos.service';
@@ -108,6 +109,53 @@ export class VideosController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.videosService.presignPart(publicId, dto.part_number, user.sub);
+  }
+
+  @Post(':publicId/upload/complete')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Complete multipart upload',
+    description:
+      'Finalizes the S3 multipart upload, transitions the video to processing, and enqueues a processing job.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Upload completed — video is now processing',
+    schema: {
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+        public_id: { type: 'string' },
+        status: { type: 'string', example: 'processing' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Missing or invalid access token',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Authenticated user does not own the channel',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Video not found',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'No active multipart upload for this video',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  async completeUpload(
+    @Param('publicId') publicId: string,
+    @Body() dto: CompleteUploadDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.videosService.completeUpload(publicId, dto.parts, user.sub);
   }
 
   @Post(':publicId/upload/abort')

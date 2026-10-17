@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
   S3Client,
   UploadPartCommand,
@@ -61,6 +62,22 @@ export class StorageService {
       Bucket: this.bucket,
       Key: key,
       UploadId: uploadId,
+    });
+    await this.client.send(command);
+  }
+
+  async completeMultipartUpload(
+    key: string,
+    uploadId: string,
+    parts: Array<{ part_number: number; etag: string }>,
+  ): Promise<void> {
+    const command = new CompleteMultipartUploadCommand({
+      Bucket: this.bucket,
+      Key: key,
+      UploadId: uploadId,
+      MultipartUpload: {
+        Parts: parts.map((p) => ({ PartNumber: p.part_number, ETag: p.etag })),
+      },
     });
     await this.client.send(command);
   }

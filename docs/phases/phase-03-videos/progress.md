@@ -1,7 +1,7 @@
 # phase-03-videos — Progress
 
 **Status:** in_progress
-**SIs:** 4/9 completed
+**SIs:** 5/9 completed
 
 ### SI-03.1 — Infraestrutura: Docker Compose (Redis, MinIO) + config modules
 - **Status:** completed
@@ -41,9 +41,12 @@
   - Module compilation test uses `lazyConnect: true` in `BullModule.forRoot` so the spec does not attempt a real Redis connection; the test only verifies DI wiring.
 
 ### SI-03.6 — Upload complete (POST /videos/:publicId/upload/complete)
-- **Status:** pending
-- **Tests:** 
-- **Observations:** none
+- **Status:** completed
+- **Tests:** 17 unit passing (videos.service.spec.ts) + 3 E2E passing (videos-upload-complete.e2e-spec.ts); storage.service.integration-spec.ts extended (completeMultipartUpload test requires MinIO container)
+- **Observations:**
+  - `getQueueToken('video-processing')` from `@nestjs/bullmq` used in unit test to provide the mock queue — matches the `@InjectQueue` token used by `VideosService`.
+  - E2E overrides both `StorageService` and the BullMQ queue token with mocks (same pattern as SI-03.3/03.4 for MinIO); the queue mock's `add` call is inspected directly to verify job payload instead of hitting real Redis.
+  - Storage integration test for `completeMultipartUpload` uses `fetch` to upload a 1-byte part to get a real ETag from MinIO — MinIO allows sub-5MiB parts in test scenarios (S3 production requires ≥5MiB per part except the last).
 
 ### SI-03.7 — Video processing worker (FFmpeg + BullMQ consumer)
 - **Status:** pending

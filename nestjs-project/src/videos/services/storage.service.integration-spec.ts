@@ -46,4 +46,25 @@ describe('StorageService (integration)', () => {
 
     await expect(service.abortMultipartUpload(key, uploadId)).resolves.toBeUndefined();
   });
+
+  it('completeMultipartUpload finalizes a real upload on MinIO', async () => {
+    // MinIO must be running: docker compose up -d minio
+    // This test uploads a minimal part (5 MiB minimum for S3; MinIO allows smaller in tests)
+    // and then completes the multipart upload.
+    const key = `test/integration/${Date.now()}/complete-test.mp4`;
+    const uploadId = await service.initiateMultipartUpload(key);
+
+    // Use a small buffer (1 byte) — MinIO allows it for testing even though S3 requires >= 5 MiB
+    const presignedUrl = await service.getPresignedPartUrl(key, uploadId, 1);
+    const uploadRes = await fetch(presignedUrl, {
+      method: 'PUT',
+      body: Buffer.from('x'),
+      headers: { 'Content-Length': '1' },
+    });
+    const etag = uploadRes.headers.get('etag') ?? '';
+
+    await expect(
+      service.completeMultipartUpload(key, uploadId, [{ part_number: 1, etag }]),
+    ).resolves.toBeUndefined();
+  });
 });

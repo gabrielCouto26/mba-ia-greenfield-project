@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
 import { Repository } from 'typeorm';
 import { nanoid } from 'nanoid';
 import { ChannelsService } from '../../channels/channels.service';
@@ -19,6 +21,8 @@ export class VideosService {
     private readonly videoRepository: Repository<Video>,
     private readonly storageService: StorageService,
     private readonly channelsService: ChannelsService,
+    @InjectQueue('video-processing')
+    private readonly processingQueue: Queue,
   ) {}
 
   async create(
@@ -95,5 +99,41 @@ export class VideosService {
     }
 
     await this.videoRepository.update({ id: video.id }, { upload_id: null });
+  }
+
+  async completeUpload(
+    publicId: string,
+    parts: Array<{ part_number: number; etag: string }>,
+    userId: string,
+  ): Promise<{ id: string; public_id: string; status: VideoStatus }> {
+    const video = await this.videoRepository.findOne({
+      where: { public_id: publicId },
+    });
+    if (!video) throw new VideoNotFoundException();
+
+    const channel = await this.channelsService.findById(video.channel_id);
+    if (!channel || channel.user_id !== userId) throw new NotChannelOwnerException();
+
+    if (video.status !== VideoStatus.DRAFT || !video.upload_id) {
+      throw new UploadNotInProgressException();
+    }
+
+    await this.storageService.completeMultipartUpload(
+      video.storage_key,
+      video.upload_id,
+      parts,
+    );
+
+    await this.videoRepository.update(
+      { id: video.id },
+      { status: VideoStatus.PROCESSING, upload_id: null },
+    );
+
+    await this.processingQueue.add('video.process', {
+      videoId: video.id,
+      storageKey: video.storage_key,
+    });
+
+    return { id: video.id, public_id: video.public_id, status: VideoStatus.PROCESSING };
   }
 }
