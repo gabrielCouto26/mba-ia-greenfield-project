@@ -30,4 +30,20 @@ describe('StorageService (integration)', () => {
     expect(typeof uploadId).toBe('string');
     expect(uploadId.length).toBeGreaterThan(0);
   });
+
+  it('getPresignedPartUrl returns a signed URL string', async () => {
+    const key = `test/integration/${Date.now()}/video.mp4`;
+    const uploadId = await service.initiateMultipartUpload(key);
+    const url = await service.getPresignedPartUrl(key, uploadId, 1);
+
+    expect(typeof url).toBe('string');
+    expect(url.length).toBeGreaterThan(0);
+  });
+
+  it('abortMultipartUpload completes without error', async () => {
+    const key = `test/integration/${Date.now()}/video.mp4`;
+    const uploadId = await service.initiateMultipartUpload(key);
+
+    await expect(service.abortMultipartUpload(key, uploadId)).resolves.toBeUndefined();
+  });
 });

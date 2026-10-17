@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChannelsService } from '../../channels/channels.service';
-import { NotChannelOwnerException } from '../../common/exceptions/domain.exception';
+import {
+  NotChannelOwnerException,
+  UploadNotInProgressException,
+  VideoNotFoundException,
+} from '../../common/exceptions/domain.exception';
 import { CreateVideoDto } from '../dto/create-video.dto';
 import { Video, VideoStatus } from '../entities/video.entity';
 import { StorageService } from './storage.service';
@@ -11,10 +15,14 @@ import { VideosService } from './videos.service';
 const mockVideoRepository = () => ({
   create: jest.fn(),
   save: jest.fn(),
+  findOne: jest.fn(),
+  update: jest.fn(),
 });
 
 const mockStorageService = () => ({
   initiateMultipartUpload: jest.fn(),
+  getPresignedPartUrl: jest.fn(),
+  abortMultipartUpload: jest.fn(),
 });
 
 const mockChannelsService = () => ({
@@ -23,8 +31,12 @@ const mockChannelsService = () => ({
 
 describe('VideosService', () => {
   let service: VideosService;
-  let videoRepo: jest.Mocked<Pick<Repository<Video>, 'create' | 'save'>>;
-  let storageService: jest.Mocked<{ initiateMultipartUpload: (key: string) => Promise<string> }>;
+  let videoRepo: jest.Mocked<Pick<Repository<Video>, 'create' | 'save' | 'findOne' | 'update'>>;
+  let storageService: jest.Mocked<{
+    initiateMultipartUpload: (key: string) => Promise<string>;
+    getPresignedPartUrl: (key: string, uploadId: string, part: number) => Promise<string>;
+    abortMultipartUpload: (key: string, uploadId: string) => Promise<void>;
+  }>;
   let channelsService: jest.Mocked<{ findById: (id: string) => Promise<{ id: string; user_id: string } | null> }>;
 
   beforeEach(async () => {
@@ -119,6 +131,142 @@ describe('VideosService', () => {
       channelsService.findById.mockResolvedValue(null);
 
       await expect(service.create(dto, userId)).rejects.toThrow(
+        NotChannelOwnerException,
+      );
+    });
+  });
+
+  describe('presignPart', () => {
+    const userId = 'user-uuid-123';
+    const publicId = 'abc12345678';
+    const draftVideo = {
+      id: 'video-uuid-789',
+      public_id: publicId,
+      channel_id: 'channel-uuid-456',
+      storage_key: `videos/${publicId}/original`,
+      upload_id: 'minio-upload-id',
+      status: VideoStatus.DRAFT,
+    };
+
+    it('returns presigned_url for valid owner + draft video', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(draftVideo);
+      channelsService.findById.mockResolvedValue({
+        id: draftVideo.channel_id,
+        user_id: userId,
+      });
+      storageService.getPresignedPartUrl.mockResolvedValue('https://presigned.example.com/part1');
+
+      const result = await service.presignPart(publicId, 1, userId);
+
+      expect(result.presigned_url).toBe('https://presigned.example.com/part1');
+      expect(storageService.getPresignedPartUrl).toHaveBeenCalledWith(
+        draftVideo.storage_key,
+        draftVideo.upload_id,
+        1,
+      );
+    });
+
+    it('throws VideoNotFoundException when video does not exist', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.presignPart(publicId, 1, userId)).rejects.toThrow(
+        VideoNotFoundException,
+      );
+      expect(channelsService.findById).not.toHaveBeenCalled();
+    });
+
+    it('throws NotChannelOwnerException when user does not own the channel', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(draftVideo);
+      channelsService.findById.mockResolvedValue({
+        id: draftVideo.channel_id,
+        user_id: 'other-user-id',
+      });
+
+      await expect(service.presignPart(publicId, 1, userId)).rejects.toThrow(
+        NotChannelOwnerException,
+      );
+    });
+
+    it('throws UploadNotInProgressException when status is not draft', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue({
+        ...draftVideo,
+        status: VideoStatus.PROCESSING,
+      });
+      channelsService.findById.mockResolvedValue({
+        id: draftVideo.channel_id,
+        user_id: userId,
+      });
+
+      await expect(service.presignPart(publicId, 1, userId)).rejects.toThrow(
+        UploadNotInProgressException,
+      );
+    });
+
+    it('throws UploadNotInProgressException when upload_id is null', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue({
+        ...draftVideo,
+        upload_id: null,
+      });
+      channelsService.findById.mockResolvedValue({
+        id: draftVideo.channel_id,
+        user_id: userId,
+      });
+
+      await expect(service.presignPart(publicId, 1, userId)).rejects.toThrow(
+        UploadNotInProgressException,
+      );
+    });
+  });
+
+  describe('abortUpload', () => {
+    const userId = 'user-uuid-123';
+    const publicId = 'abc12345678';
+    const draftVideo = {
+      id: 'video-uuid-789',
+      public_id: publicId,
+      channel_id: 'channel-uuid-456',
+      storage_key: `videos/${publicId}/original`,
+      upload_id: 'minio-upload-id',
+      status: VideoStatus.DRAFT,
+    };
+
+    it('aborts S3 upload and clears upload_id', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(draftVideo);
+      channelsService.findById.mockResolvedValue({
+        id: draftVideo.channel_id,
+        user_id: userId,
+      });
+      storageService.abortMultipartUpload.mockResolvedValue(undefined);
+      (videoRepo.update as jest.Mock).mockResolvedValue({ affected: 1 });
+
+      await service.abortUpload(publicId, userId);
+
+      expect(storageService.abortMultipartUpload).toHaveBeenCalledWith(
+        draftVideo.storage_key,
+        draftVideo.upload_id,
+      );
+      expect(videoRepo.update).toHaveBeenCalledWith(
+        { id: draftVideo.id },
+        { upload_id: null },
+      );
+    });
+
+    it('throws VideoNotFoundException when video does not exist', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.abortUpload(publicId, userId)).rejects.toThrow(
+        VideoNotFoundException,
+      );
+    });
+
+    it('throws NotChannelOwnerException when user does not own the channel', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(draftVideo);
+      channelsService.findById.mockResolvedValue({
+        id: draftVideo.channel_id,
+        user_id: 'other-user-id',
+      });
+
+      await expect(service.abortUpload(publicId, userId)).rejects.toThrow(
         NotChannelOwnerException,
       );
     });

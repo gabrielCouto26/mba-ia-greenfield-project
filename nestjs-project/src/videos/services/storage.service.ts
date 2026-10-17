@@ -1,8 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  AbortMultipartUploadCommand,
   CreateMultipartUploadCommand,
   S3Client,
+  UploadPartCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import s3Config from '../../config/s3.config';
 import type { ConfigType } from '@nestjs/config';
 
@@ -37,5 +40,28 @@ export class StorageService {
       throw new Error('S3 did not return an UploadId');
     }
     return result.UploadId;
+  }
+
+  async getPresignedPartUrl(
+    key: string,
+    uploadId: string,
+    partNumber: number,
+  ): Promise<string> {
+    const command = new UploadPartCommand({
+      Bucket: this.bucket,
+      Key: key,
+      UploadId: uploadId,
+      PartNumber: partNumber,
+    });
+    return getSignedUrl(this.client, command, { expiresIn: 3600 });
+  }
+
+  async abortMultipartUpload(key: string, uploadId: string): Promise<void> {
+    const command = new AbortMultipartUploadCommand({
+      Bucket: this.bucket,
+      Key: key,
+      UploadId: uploadId,
+    });
+    await this.client.send(command);
   }
 }

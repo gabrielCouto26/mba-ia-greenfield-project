@@ -3,6 +3,7 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
 } from '@nestjs/common';
 import {
@@ -16,6 +17,7 @@ import type { JwtPayload } from '../../auth/auth.types';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { ApiErrorEnvelope } from '../../common/openapi/api-error-envelope.dto';
 import { CreateVideoDto } from '../dto/create-video.dto';
+import { PresignPartDto } from '../dto/presign-part.dto';
 import { VideosService } from '../services/videos.service';
 
 @ApiTags('videos')
@@ -62,5 +64,79 @@ export class VideosController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.videosService.create(dto, user.sub);
+  }
+
+  @Post(':publicId/upload/presign-part')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Presign upload part',
+    description: 'Generates a presigned URL for uploading a specific part to S3/MinIO.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Presigned URL generated',
+    schema: {
+      properties: {
+        presigned_url: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Missing or invalid access token',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Authenticated user does not own the channel',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Video not found',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'No active multipart upload for this video',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  async presignPart(
+    @Param('publicId') publicId: string,
+    @Body() dto: PresignPartDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.videosService.presignPart(publicId, dto.part_number, user.sub);
+  }
+
+  @Post(':publicId/upload/abort')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Abort multipart upload',
+    description: 'Cancels an in-progress multipart upload and clears the upload_id.',
+  })
+  @ApiResponse({ status: 204, description: 'Upload aborted' })
+  @ApiResponse({
+    status: 401,
+    description: 'Missing or invalid access token',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Authenticated user does not own the channel',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Video not found',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  async abortUpload(
+    @Param('publicId') publicId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    await this.videosService.abortUpload(publicId, user.sub);
   }
 }

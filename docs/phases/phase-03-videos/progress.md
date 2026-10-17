@@ -1,7 +1,7 @@
 # phase-03-videos — Progress
 
 **Status:** in_progress
-**SIs:** 2/9 completed
+**SIs:** 3/9 completed
 
 ### SI-03.1 — Infraestrutura: Docker Compose (Redis, MinIO) + config modules
 - **Status:** completed
@@ -26,9 +26,11 @@
   - Error envelope field is `error` (not `errorCode`) per `DomainExceptionFilter` — spec was generated with wrong field name; test corrected to match actual project convention (`ApiErrorEnvelope.error`).
 
 ### SI-03.4 — Upload gerenciamento: presign-part + abort
-- **Status:** pending
-- **Tests:** 
-- **Observations:** none
+- **Status:** completed
+- **Tests:** 12 unit passing (videos.service.spec.ts) + 7 E2E passing (videos-upload-management.e2e-spec.ts); storage.service.integration-spec.ts skipped (requires MinIO container)
+- **Observations:**
+  - StorageService extended with `getPresignedPartUrl` (UploadPartCommand + `getSignedUrl` from `@aws-sdk/s3-request-presigner`) and `abortMultipartUpload` (AbortMultipartUploadCommand).
+  - E2E test overrides StorageService with a mock (same pattern as SI-03.3) since MinIO is not available in this environment.
 
 ### SI-03.5 — Infraestrutura BullMQ
 - **Status:** pending

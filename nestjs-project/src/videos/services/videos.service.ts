@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { nanoid } from 'nanoid';
 import { ChannelsService } from '../../channels/channels.service';
-import { NotChannelOwnerException } from '../../common/exceptions/domain.exception';
+import {
+  NotChannelOwnerException,
+  UploadNotInProgressException,
+  VideoNotFoundException,
+} from '../../common/exceptions/domain.exception';
 import type { CreateVideoDto } from '../dto/create-video.dto';
 import { Video, VideoStatus } from '../entities/video.entity';
 import { StorageService } from './storage.service';
@@ -47,5 +51,49 @@ export class VideosService {
     const saved = await this.videoRepository.save(video);
 
     return { id: saved.id, public_id: saved.public_id, status: saved.status };
+  }
+
+  async presignPart(
+    publicId: string,
+    partNumber: number,
+    userId: string,
+  ): Promise<{ presigned_url: string }> {
+    const video = await this.videoRepository.findOne({
+      where: { public_id: publicId },
+    });
+    if (!video) throw new VideoNotFoundException();
+
+    const channel = await this.channelsService.findById(video.channel_id);
+    if (!channel || channel.user_id !== userId) throw new NotChannelOwnerException();
+
+    if (video.status !== VideoStatus.DRAFT || !video.upload_id) {
+      throw new UploadNotInProgressException();
+    }
+
+    const presigned_url = await this.storageService.getPresignedPartUrl(
+      video.storage_key,
+      video.upload_id,
+      partNumber,
+    );
+    return { presigned_url };
+  }
+
+  async abortUpload(publicId: string, userId: string): Promise<void> {
+    const video = await this.videoRepository.findOne({
+      where: { public_id: publicId },
+    });
+    if (!video) throw new VideoNotFoundException();
+
+    const channel = await this.channelsService.findById(video.channel_id);
+    if (!channel || channel.user_id !== userId) throw new NotChannelOwnerException();
+
+    if (video.upload_id) {
+      await this.storageService.abortMultipartUpload(
+        video.storage_key,
+        video.upload_id,
+      );
+    }
+
+    await this.videoRepository.update({ id: video.id }, { upload_id: null });
   }
 }
