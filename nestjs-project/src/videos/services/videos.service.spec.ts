@@ -7,6 +7,7 @@ import {
   NotChannelOwnerException,
   UploadNotInProgressException,
   VideoNotFoundException,
+  VideoNotReadyException,
 } from '../../common/exceptions/domain.exception';
 import { CreateVideoDto } from '../dto/create-video.dto';
 import { Video, VideoStatus } from '../entities/video.entity';
@@ -25,6 +26,7 @@ const mockStorageService = () => ({
   getPresignedPartUrl: jest.fn(),
   abortMultipartUpload: jest.fn(),
   completeMultipartUpload: jest.fn(),
+  getPresignedGetUrl: jest.fn(),
 });
 
 const mockChannelsService = () => ({
@@ -43,6 +45,7 @@ describe('VideosService', () => {
     getPresignedPartUrl: (key: string, uploadId: string, part: number) => Promise<string>;
     abortMultipartUpload: (key: string, uploadId: string) => Promise<void>;
     completeMultipartUpload: (key: string, uploadId: string, parts: Array<{ part_number: number; etag: string }>) => Promise<void>;
+    getPresignedGetUrl: (key: string, options?: { responseContentDisposition?: string }) => Promise<string>;
   }>;
   let channelsService: jest.Mocked<{ findById: (id: string) => Promise<{ id: string; user_id: string } | null> }>;
   let processingQueue: jest.Mocked<{ add: (name: string, data: object) => Promise<unknown> }>;
@@ -376,6 +379,86 @@ describe('VideosService', () => {
       await expect(service.completeUpload(publicId, parts, userId)).rejects.toThrow(
         UploadNotInProgressException,
       );
+    });
+  });
+
+  describe('getStreamUrl', () => {
+    const publicId = 'streamvid1234';
+    const readyVideo = {
+      id: 'video-uuid-stream',
+      public_id: publicId,
+      channel_id: 'channel-uuid-456',
+      storage_key: `videos/${publicId}/original`,
+      status: VideoStatus.READY,
+      upload_id: null,
+    };
+
+    it('returns presigned GET URL for ready video', async () => {
+      const presignedUrl = 'https://minio:9000/bucket/videos/streamvid1234/original?sig=abc';
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(readyVideo);
+      storageService.getPresignedGetUrl.mockResolvedValue(presignedUrl);
+
+      const result = await service.getStreamUrl(publicId);
+
+      expect(result).toBe(presignedUrl);
+      expect(storageService.getPresignedGetUrl).toHaveBeenCalledWith(readyVideo.storage_key);
+    });
+
+    it('throws VideoNotFoundException when video does not exist', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.getStreamUrl(publicId)).rejects.toThrow(VideoNotFoundException);
+    });
+
+    it('throws VideoNotReadyException when video status is not ready', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue({
+        ...readyVideo,
+        status: VideoStatus.PROCESSING,
+      });
+
+      await expect(service.getStreamUrl(publicId)).rejects.toThrow(VideoNotReadyException);
+    });
+  });
+
+  describe('getDownloadUrl', () => {
+    const publicId = 'dlvideo12345';
+    const readyVideo = {
+      id: 'video-uuid-dl',
+      public_id: publicId,
+      channel_id: 'channel-uuid-456',
+      storage_key: `videos/${publicId}/original`,
+      status: VideoStatus.READY,
+      upload_id: null,
+    };
+
+    it('returns presigned GET URL with attachment content-disposition', async () => {
+      const presignedUrl =
+        'https://minio:9000/bucket/videos/dlvideo12345/original?response-content-disposition=attachment&sig=abc';
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(readyVideo);
+      storageService.getPresignedGetUrl.mockResolvedValue(presignedUrl);
+
+      const result = await service.getDownloadUrl(publicId);
+
+      expect(result).toBe(presignedUrl);
+      expect(storageService.getPresignedGetUrl).toHaveBeenCalledWith(
+        readyVideo.storage_key,
+        { responseContentDisposition: 'attachment' },
+      );
+    });
+
+    it('throws VideoNotFoundException when video does not exist', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.getDownloadUrl(publicId)).rejects.toThrow(VideoNotFoundException);
+    });
+
+    it('throws VideoNotReadyException when video status is draft', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue({
+        ...readyVideo,
+        status: VideoStatus.DRAFT,
+      });
+
+      await expect(service.getDownloadUrl(publicId)).rejects.toThrow(VideoNotReadyException);
     });
   });
 });

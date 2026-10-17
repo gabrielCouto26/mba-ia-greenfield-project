@@ -9,6 +9,7 @@ import {
   NotChannelOwnerException,
   UploadNotInProgressException,
   VideoNotFoundException,
+  VideoNotReadyException,
 } from '../../common/exceptions/domain.exception';
 import type { CreateVideoDto } from '../dto/create-video.dto';
 import { Video, VideoStatus } from '../entities/video.entity';
@@ -99,6 +100,28 @@ export class VideosService {
     }
 
     await this.videoRepository.update({ id: video.id }, { upload_id: null });
+  }
+
+  async getStreamUrl(publicId: string): Promise<string> {
+    const video = await this.videoRepository.findOne({
+      where: { public_id: publicId },
+    });
+    if (!video) throw new VideoNotFoundException();
+    if (video.status !== VideoStatus.READY) throw new VideoNotReadyException();
+
+    return this.storageService.getPresignedGetUrl(video.storage_key);
+  }
+
+  async getDownloadUrl(publicId: string): Promise<string> {
+    const video = await this.videoRepository.findOne({
+      where: { public_id: publicId },
+    });
+    if (!video) throw new VideoNotFoundException();
+    if (video.status !== VideoStatus.READY) throw new VideoNotReadyException();
+
+    return this.storageService.getPresignedGetUrl(video.storage_key, {
+      responseContentDisposition: 'attachment',
+    });
   }
 
   async completeUpload(

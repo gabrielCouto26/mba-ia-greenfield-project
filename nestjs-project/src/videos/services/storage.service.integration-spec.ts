@@ -67,4 +67,23 @@ describe('StorageService (integration)', () => {
       service.completeMultipartUpload(key, uploadId, [{ part_number: 1, etag }]),
     ).resolves.toBeUndefined();
   });
+
+  it('getPresignedGetUrl returns a signed URL string', async () => {
+    // MinIO must be running: docker compose up -d minio
+    const key = `test/integration/${Date.now()}/video.mp4`;
+    const url = await service.getPresignedGetUrl(key);
+
+    expect(typeof url).toBe('string');
+    expect(url.length).toBeGreaterThan(0);
+  });
+
+  it('getPresignedGetUrl with responseContentDisposition includes param in URL', async () => {
+    // MinIO must be running: docker compose up -d minio
+    const key = `test/integration/${Date.now()}/video.mp4`;
+    const url = await service.getPresignedGetUrl(key, {
+      responseContentDisposition: 'attachment',
+    });
+
+    expect(url).toContain('response-content-disposition');
+  });
 });

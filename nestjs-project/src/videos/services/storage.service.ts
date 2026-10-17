@@ -98,6 +98,20 @@ export class StorageService {
     await pipeline(response.Body as Readable, writeStream);
   }
 
+  async getPresignedGetUrl(
+    key: string,
+    options: { responseContentDisposition?: string } = {},
+  ): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ...(options.responseContentDisposition && {
+        ResponseContentDisposition: options.responseContentDisposition,
+      }),
+    });
+    return getSignedUrl(this.client, command, { expiresIn: 3600 });
+  }
+
   async uploadFile(
     key: string,
     filePath: string,

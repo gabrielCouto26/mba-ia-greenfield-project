@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
+  Redirect,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -15,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import type { JwtPayload } from '../../auth/auth.types';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
 import { ApiErrorEnvelope } from '../../common/openapi/api-error-envelope.dto';
 import { CompleteUploadDto } from '../dto/complete-upload.dto';
 import { CreateVideoDto } from '../dto/create-video.dto';
@@ -186,5 +189,58 @@ export class VideosController {
     @CurrentUser() user: JwtPayload,
   ) {
     await this.videosService.abortUpload(publicId, user.sub);
+  }
+
+  @Get(':publicId/stream')
+  @Redirect('', HttpStatus.FOUND)
+  @Public()
+  @ApiOperation({
+    summary: 'Stream video',
+    description: 'Redirects to a presigned S3 URL for video streaming.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to presigned S3 GET URL for streaming',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Video not found',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Video is not ready',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  async streamVideo(@Param('publicId') publicId: string) {
+    const url = await this.videosService.getStreamUrl(publicId);
+    return { url };
+  }
+
+  @Get(':publicId/download')
+  @Redirect('', HttpStatus.FOUND)
+  @Public()
+  @ApiOperation({
+    summary: 'Download video',
+    description:
+      'Redirects to a presigned S3 URL for video download with Content-Disposition attachment.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to presigned S3 GET URL for download',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Video not found',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Video is not ready',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  async downloadVideo(@Param('publicId') publicId: string) {
+    const url = await this.videosService.getDownloadUrl(publicId);
+    return { url };
   }
 }

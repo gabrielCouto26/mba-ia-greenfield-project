@@ -1,7 +1,7 @@
 # phase-03-videos — Progress
 
 **Status:** in_progress
-**SIs:** 7/9 completed
+**SIs:** 8/9 completed
 
 ### SI-03.1 — Infraestrutura: Docker Compose (Redis, MinIO) + config modules
 - **Status:** completed
@@ -58,9 +58,12 @@
   - Created `Dockerfile.worker` (node:25.6.0-slim + ffmpeg) and added `nestjs-worker` service to `compose.yaml` with `depends_on: db, redis, minio`.
 
 ### SI-03.8 — Streaming + download
-- **Status:** pending
-- **Tests:** 
-- **Observations:** none
+- **Status:** completed
+- **Tests:** 23 unit passing (videos.service.spec.ts) + 6 E2E passing (videos-streaming.e2e-spec.ts); storage.service.integration-spec.ts extended (getPresignedGetUrl tests require MinIO container)
+- **Observations:**
+  - `public_id` fixture values in E2E test must be exactly 11 chars to match the `varchar(11)` column constraint — initial fixtures were 12 chars and caused `QueryFailedError`.
+  - E2E tests for stream/download insert video records directly via the TypeORM repository with status `READY` (cannot use the upload flow without MinIO); StorageService is mocked to return deterministic presigned URLs.
+  - Both endpoints use `@Redirect('', HttpStatus.FOUND)` + `@Public()` — NestJS `@Redirect` with a dynamic return `{ url }` sets the Location header to the presigned URL with 302 status.
 
 ### SI-03.9 — Video info (GET /videos/:publicId)
 - **Status:** pending
