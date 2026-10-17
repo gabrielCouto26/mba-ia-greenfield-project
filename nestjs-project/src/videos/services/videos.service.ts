@@ -124,6 +124,35 @@ export class VideosService {
     });
   }
 
+  async findByPublicId(publicId: string): Promise<{
+    id: string;
+    public_id: string;
+    title: string;
+    status: VideoStatus;
+    duration: number | null;
+    thumbnail_url: string | null;
+    created_at: Date;
+  }> {
+    const video = await this.videoRepository.findOne({
+      where: { public_id: publicId },
+    });
+    if (!video) throw new VideoNotFoundException();
+
+    const thumbnail_url = video.thumbnail_key
+      ? await this.storageService.getPresignedGetUrl(video.thumbnail_key)
+      : null;
+
+    return {
+      id: video.id,
+      public_id: video.public_id,
+      title: video.title,
+      status: video.status,
+      duration: video.duration,
+      thumbnail_url,
+      created_at: video.created_at,
+    };
+  }
+
   async completeUpload(
     publicId: string,
     parts: Array<{ part_number: number; etag: string }>,

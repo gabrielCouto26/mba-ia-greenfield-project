@@ -1,7 +1,7 @@
 # phase-03-videos — Progress
 
-**Status:** in_progress
-**SIs:** 8/9 completed
+**Status:** completed
+**SIs:** 9/9 completed
 
 ### SI-03.1 — Infraestrutura: Docker Compose (Redis, MinIO) + config modules
 - **Status:** completed
@@ -66,6 +66,9 @@
   - Both endpoints use `@Redirect('', HttpStatus.FOUND)` + `@Public()` — NestJS `@Redirect` with a dynamic return `{ url }` sets the Location header to the presigned URL with 302 status.
 
 ### SI-03.9 — Video info (GET /videos/:publicId)
-- **Status:** pending
-- **Tests:** 
-- **Observations:** none
+- **Status:** completed
+- **Tests:** 26 unit passing (videos.service.spec.ts) + 4 E2E passing (videos-info.e2e-spec.ts)
+- **Observations:**
+  - `findByPublicId` conditionally calls `getPresignedGetUrl` only when `thumbnail_key` is non-null — returns `null` directly for videos without a thumbnail, never invoking StorageService.
+  - E2E overrides `StorageService` with a mock returning a fixed MinIO URL (same pattern as SI-03.8) since MinIO container is not available in this environment.
+  - The `GET /videos/:publicId` route is placed before `GET :publicId/stream` and `GET :publicId/download` in the controller; NestJS matches more specific routes first so no conflicts occur.

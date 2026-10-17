@@ -461,4 +461,54 @@ describe('VideosService', () => {
       await expect(service.getDownloadUrl(publicId)).rejects.toThrow(VideoNotReadyException);
     });
   });
+
+  describe('findByPublicId', () => {
+    const publicId = 'infovid12345';
+    const baseVideo = {
+      id: 'video-uuid-info',
+      public_id: publicId,
+      title: 'Test Video',
+      status: VideoStatus.READY,
+      duration: 120.5,
+      thumbnail_key: null as string | null,
+      storage_key: `videos/${publicId}/original`,
+      channel_id: 'channel-uuid-456',
+      created_at: new Date('2026-10-16T12:00:00.000Z'),
+    };
+
+    it('returns video metadata with thumbnail_url when thumbnail_key is set', async () => {
+      const thumbnailKey = `videos/${publicId}/thumbnail.jpg`;
+      const presignedUrl = `https://minio:9000/streamtube/${thumbnailKey}?sig=abc`;
+      const videoWithThumbnail = { ...baseVideo, thumbnail_key: thumbnailKey };
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(videoWithThumbnail);
+      storageService.getPresignedGetUrl.mockResolvedValue(presignedUrl);
+
+      const result = await service.findByPublicId(publicId);
+
+      expect(result.thumbnail_url).toBe(presignedUrl);
+      expect(storageService.getPresignedGetUrl).toHaveBeenCalledWith(thumbnailKey);
+      expect(result).toMatchObject({
+        id: baseVideo.id,
+        public_id: publicId,
+        title: baseVideo.title,
+        status: VideoStatus.READY,
+        duration: baseVideo.duration,
+      });
+    });
+
+    it('returns thumbnail_url as null when thumbnail_key is absent', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(baseVideo);
+
+      const result = await service.findByPublicId(publicId);
+
+      expect(result.thumbnail_url).toBeNull();
+      expect(storageService.getPresignedGetUrl).not.toHaveBeenCalled();
+    });
+
+    it('throws VideoNotFoundException when video does not exist', async () => {
+      (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.findByPublicId(publicId)).rejects.toThrow(VideoNotFoundException);
+    });
+  });
 });

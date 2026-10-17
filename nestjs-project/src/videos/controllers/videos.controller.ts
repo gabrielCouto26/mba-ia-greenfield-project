@@ -191,6 +191,36 @@ export class VideosController {
     await this.videosService.abortUpload(publicId, user.sub);
   }
 
+  @Get(':publicId')
+  @Public()
+  @ApiOperation({
+    summary: 'Get video info',
+    description: 'Returns public metadata for a video, including a presigned thumbnail URL when available.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Video metadata',
+    schema: {
+      properties: {
+        id: { type: 'string', format: 'uuid' },
+        public_id: { type: 'string' },
+        title: { type: 'string' },
+        status: { type: 'string' },
+        duration: { type: 'number', nullable: true },
+        thumbnail_url: { type: 'string', nullable: true },
+        created_at: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Video not found',
+    schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
+  })
+  async getVideoInfo(@Param('publicId') publicId: string) {
+    return this.videosService.findByPublicId(publicId);
+  }
+
   @Get(':publicId/stream')
   @Redirect('', HttpStatus.FOUND)
   @Public()
