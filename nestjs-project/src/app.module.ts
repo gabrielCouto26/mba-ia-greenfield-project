@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -21,6 +22,16 @@ import { envValidationSchema } from './config/env.validation';
       load: [appConfig, authConfig, databaseConfig, mailConfig, redisConfig, s3Config, swaggerConfig],
       validationSchema: envValidationSchema,
       validationOptions: { allowUnknown: true, abortEarly: false },
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [redisConfig.KEY],
+      useFactory: (redisCfg: ConfigType<typeof redisConfig>) => ({
+        connection: {
+          host: redisCfg.host,
+          port: redisCfg.port,
+        },
+      }),
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

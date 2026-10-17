@@ -1,7 +1,7 @@
 # phase-03-videos — Progress
 
 **Status:** in_progress
-**SIs:** 3/9 completed
+**SIs:** 4/9 completed
 
 ### SI-03.1 — Infraestrutura: Docker Compose (Redis, MinIO) + config modules
 - **Status:** completed
@@ -33,9 +33,12 @@
   - E2E test overrides StorageService with a mock (same pattern as SI-03.3) since MinIO is not available in this environment.
 
 ### SI-03.5 — Infraestrutura BullMQ
-- **Status:** pending
-- **Tests:** 
-- **Observations:** none
+- **Status:** completed
+- **Tests:** 1 passing
+- **Observations:**
+  - Installed `ioredis` explicitly — bullmq v6 treats it as an optional peer dep and throws "could not load ioredis" at runtime without it.
+  - Extended `transformIgnorePatterns` in both `package.json` and `test/jest-e2e.json` to include `@nestjs/bullmq|@nestjs/bull-shared|bullmq` (same ESM-in-Jest pattern as nanoid, established in SI-03.3).
+  - Module compilation test uses `lazyConnect: true` in `BullModule.forRoot` so the spec does not attempt a real Redis connection; the test only verifies DI wiring.
 
 ### SI-03.6 — Upload complete (POST /videos/:publicId/upload/complete)
 - **Status:** pending
