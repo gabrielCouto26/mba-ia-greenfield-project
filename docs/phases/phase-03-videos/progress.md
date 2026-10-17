@@ -1,7 +1,7 @@
 # phase-03-videos — Progress
 
 **Status:** in_progress
-**SIs:** 5/9 completed
+**SIs:** 7/9 completed
 
 ### SI-03.1 — Infraestrutura: Docker Compose (Redis, MinIO) + config modules
 - **Status:** completed
@@ -49,9 +49,13 @@
   - Storage integration test for `completeMultipartUpload` uses `fetch` to upload a 1-byte part to get a real ETag from MinIO — MinIO allows sub-5MiB parts in test scenarios (S3 production requires ≥5MiB per part except the last).
 
 ### SI-03.7 — Video processing worker (FFmpeg + BullMQ consumer)
-- **Status:** pending
-- **Tests:** 
-- **Observations:** none
+- **Status:** completed
+- **Tests:** 7 passing (4 FfmpegService unit + 3 VideoProcessor unit)
+- **Observations:**
+  - `promisify(execFile)` resolves to a plain string (not `{ stdout, stderr }`) when Jest's mock lacks the `[util.promisify.custom]` symbol. Replaced `promisify` with an explicit Promise wrapper in `FfmpegService` so the callback convention is explicit and testable.
+  - `VideoProcessor` extends `WorkerHost` from `@nestjs/bullmq` v12 and routes by `job.name` inside a single `process()` method — the `@Process('job-name')` per-name decorator belongs to the older `@nestjs/bull` package and is not available in `@nestjs/bullmq`.
+  - `VideoProcessor` is intentionally NOT registered in `VideosModule` (API context) — it lives only in `WorkerModule` to enforce TD-04 (separate container, no FFmpeg workers running in the API process).
+  - Created `Dockerfile.worker` (node:25.6.0-slim + ffmpeg) and added `nestjs-worker` service to `compose.yaml` with `depends_on: db, redis, minio`.
 
 ### SI-03.8 — Streaming + download
 - **Status:** pending

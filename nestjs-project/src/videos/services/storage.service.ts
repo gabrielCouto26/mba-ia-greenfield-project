@@ -1,8 +1,14 @@
+import { createWriteStream } from 'fs';
+import { readFile } from 'fs/promises';
+import { pipeline } from 'stream/promises';
+import type { Readable } from 'stream';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
+  GetObjectCommand,
+  PutObjectCommand,
   S3Client,
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
@@ -78,6 +84,31 @@ export class StorageService {
       MultipartUpload: {
         Parts: parts.map((p) => ({ PartNumber: p.part_number, ETag: p.etag })),
       },
+    });
+    await this.client.send(command);
+  }
+
+  async downloadFile(key: string, destPath: string): Promise<void> {
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    const response = await this.client.send(command);
+    if (!response.Body) {
+      throw new Error(`No body returned for S3 key: ${key}`);
+    }
+    const writeStream = createWriteStream(destPath);
+    await pipeline(response.Body as Readable, writeStream);
+  }
+
+  async uploadFile(
+    key: string,
+    filePath: string,
+    contentType = 'image/jpeg',
+  ): Promise<void> {
+    const body = await readFile(filePath);
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
     });
     await this.client.send(command);
   }
