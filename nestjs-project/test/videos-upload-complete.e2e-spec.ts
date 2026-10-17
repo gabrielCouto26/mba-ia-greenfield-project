@@ -26,7 +26,9 @@ describe('videos-upload-complete', () => {
     })
       .overrideProvider(StorageService)
       .useValue({
-        initiateMultipartUpload: jest.fn().mockResolvedValue('mock-upload-id-e2e'),
+        initiateMultipartUpload: jest
+          .fn()
+          .mockResolvedValue('mock-upload-id-e2e'),
         getPresignedPartUrl: jest
           .fn()
           .mockResolvedValue('https://mock-presigned-url.example.com/part'),
@@ -199,8 +201,10 @@ describe('videos-upload-complete', () => {
 
   describe('3. Authorization Failures', () => {
     it('3.1. reject-complete-by-non-owner', async () => {
-      const { access_token: tokenA } = await registerConfirmAndLogin('userA@test.com');
-      const { access_token: tokenB } = await registerConfirmAndLogin('userB@test.com');
+      const { access_token: tokenA } =
+        await registerConfirmAndLogin('userA@test.com');
+      const { access_token: tokenB } =
+        await registerConfirmAndLogin('userB@test.com');
       const userAId = await getUserIdFromToken(tokenA);
       const channelAId = await getChannelIdForUser(userAId);
       const publicId = await initiateDraftUpload(tokenA, channelAId);

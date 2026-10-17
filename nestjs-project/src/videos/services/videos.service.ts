@@ -38,9 +38,8 @@ export class VideosService {
     const public_id = nanoid(11);
     const storage_key = `videos/${public_id}/original`;
 
-    const upload_id = await this.storageService.initiateMultipartUpload(
-      storage_key,
-    );
+    const upload_id =
+      await this.storageService.initiateMultipartUpload(storage_key);
 
     const video = this.videoRepository.create({
       public_id,
@@ -69,7 +68,8 @@ export class VideosService {
     if (!video) throw new VideoNotFoundException();
 
     const channel = await this.channelsService.findById(video.channel_id);
-    if (!channel || channel.user_id !== userId) throw new NotChannelOwnerException();
+    if (!channel || channel.user_id !== userId)
+      throw new NotChannelOwnerException();
 
     if (video.status !== VideoStatus.DRAFT || !video.upload_id) {
       throw new UploadNotInProgressException();
@@ -90,7 +90,8 @@ export class VideosService {
     if (!video) throw new VideoNotFoundException();
 
     const channel = await this.channelsService.findById(video.channel_id);
-    if (!channel || channel.user_id !== userId) throw new NotChannelOwnerException();
+    if (!channel || channel.user_id !== userId)
+      throw new NotChannelOwnerException();
 
     if (video.upload_id) {
       await this.storageService.abortMultipartUpload(
@@ -164,7 +165,8 @@ export class VideosService {
     if (!video) throw new VideoNotFoundException();
 
     const channel = await this.channelsService.findById(video.channel_id);
-    if (!channel || channel.user_id !== userId) throw new NotChannelOwnerException();
+    if (!channel || channel.user_id !== userId)
+      throw new NotChannelOwnerException();
 
     if (video.status !== VideoStatus.DRAFT || !video.upload_id) {
       throw new UploadNotInProgressException();
@@ -186,6 +188,10 @@ export class VideosService {
       storageKey: video.storage_key,
     });
 
-    return { id: video.id, public_id: video.public_id, status: VideoStatus.PROCESSING };
+    return {
+      id: video.id,
+      public_id: video.public_id,
+      status: VideoStatus.PROCESSING,
+    };
   }
 }

@@ -63,10 +63,7 @@ export class VideosController {
     description: 'Authenticated user does not own the channel',
     schema: { $ref: getSchemaPath(ApiErrorEnvelope) },
   })
-  async create(
-    @Body() dto: CreateVideoDto,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  async create(@Body() dto: CreateVideoDto, @CurrentUser() user: JwtPayload) {
     return this.videosService.create(dto, user.sub);
   }
 
@@ -75,7 +72,8 @@ export class VideosController {
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Presign upload part',
-    description: 'Generates a presigned URL for uploading a specific part to S3/MinIO.',
+    description:
+      'Generates a presigned URL for uploading a specific part to S3/MinIO.',
   })
   @ApiResponse({
     status: 200,
@@ -166,7 +164,8 @@ export class VideosController {
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Abort multipart upload',
-    description: 'Cancels an in-progress multipart upload and clears the upload_id.',
+    description:
+      'Cancels an in-progress multipart upload and clears the upload_id.',
   })
   @ApiResponse({ status: 204, description: 'Upload aborted' })
   @ApiResponse({
@@ -195,7 +194,8 @@ export class VideosController {
   @Public()
   @ApiOperation({
     summary: 'Get video info',
-    description: 'Returns public metadata for a video, including a presigned thumbnail URL when available.',
+    description:
+      'Returns public metadata for a video, including a presigned thumbnail URL when available.',
   })
   @ApiResponse({
     status: 200,

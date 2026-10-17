@@ -24,7 +24,9 @@ describe('videos-upload-management', () => {
     })
       .overrideProvider(StorageService)
       .useValue({
-        initiateMultipartUpload: jest.fn().mockResolvedValue('mock-upload-id-e2e'),
+        initiateMultipartUpload: jest
+          .fn()
+          .mockResolvedValue('mock-upload-id-e2e'),
         getPresignedPartUrl: jest
           .fn()
           .mockResolvedValue('https://mock-presigned-url.example.com/part'),
@@ -184,8 +186,10 @@ describe('videos-upload-management', () => {
 
   describe('4. Authorization Failures', () => {
     it('4.1. presign-part-rejects-non-owner — returns 403 NOT_CHANNEL_OWNER', async () => {
-      const { access_token: tokenA } = await registerConfirmAndLogin('userA@test.com');
-      const { access_token: tokenB } = await registerConfirmAndLogin('userB@test.com');
+      const { access_token: tokenA } =
+        await registerConfirmAndLogin('userA@test.com');
+      const { access_token: tokenB } =
+        await registerConfirmAndLogin('userB@test.com');
       const userAId = await getUserIdFromToken(tokenA);
       const channelAId = await getChannelIdForUser(userAId);
       const publicId = await initiateDraftUpload(tokenA, channelAId);
@@ -200,8 +204,10 @@ describe('videos-upload-management', () => {
     });
 
     it('4.2. abort-rejects-non-owner — returns 403 NOT_CHANNEL_OWNER', async () => {
-      const { access_token: tokenA } = await registerConfirmAndLogin('userC@test.com');
-      const { access_token: tokenB } = await registerConfirmAndLogin('userD@test.com');
+      const { access_token: tokenA } =
+        await registerConfirmAndLogin('userC@test.com');
+      const { access_token: tokenB } =
+        await registerConfirmAndLogin('userD@test.com');
       const userAId = await getUserIdFromToken(tokenA);
       const channelAId = await getChannelIdForUser(userAId);
       const publicId = await initiateDraftUpload(tokenA, channelAId);

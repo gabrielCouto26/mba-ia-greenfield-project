@@ -32,7 +32,9 @@ export class VideoProcessor extends WorkerHost {
 
     const { videoId, storageKey } = job.data;
 
-    const video = await this.videoRepository.findOne({ where: { id: videoId } });
+    const video = await this.videoRepository.findOne({
+      where: { id: videoId },
+    });
     if (!video) {
       throw new Error(`Video not found: ${videoId}`);
     }
@@ -46,7 +48,11 @@ export class VideoProcessor extends WorkerHost {
       await this.storageService.downloadFile(storageKey, videoPath);
       const duration = await this.ffmpegService.extractMetadata(videoPath);
       await this.ffmpegService.generateThumbnail(videoPath, thumbnailPath);
-      await this.storageService.uploadFile(thumbnailKey, thumbnailPath, 'image/jpeg');
+      await this.storageService.uploadFile(
+        thumbnailKey,
+        thumbnailPath,
+        'image/jpeg',
+      );
 
       await this.videoRepository.update(videoId, {
         status: VideoStatus.READY,
@@ -62,7 +68,9 @@ export class VideoProcessor extends WorkerHost {
       });
       throw error;
     } finally {
-      await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => undefined);
+      await fs
+        .rm(tmpDir, { recursive: true, force: true })
+        .catch(() => undefined);
     }
   }
 }

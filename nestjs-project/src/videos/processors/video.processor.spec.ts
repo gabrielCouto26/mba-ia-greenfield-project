@@ -30,7 +30,9 @@ describe('VideoProcessor', () => {
   let processor: VideoProcessor;
   let videoRepo: jest.Mocked<Pick<Repository<Video>, 'findOne' | 'update'>>;
   let ffmpegService: jest.Mocked<FfmpegService>;
-  let storageService: jest.Mocked<Pick<StorageService, 'downloadFile' | 'uploadFile'>>;
+  let storageService: jest.Mocked<
+    Pick<StorageService, 'downloadFile' | 'uploadFile'>
+  >;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -65,7 +67,10 @@ describe('VideoProcessor', () => {
       storageService.uploadFile.mockResolvedValue(undefined);
       videoRepo.update.mockResolvedValue({ affected: 1 } as any);
 
-      const job = makeJob({ videoId: 'uuid-1', storageKey: 'videos/abc123/original' });
+      const job = makeJob({
+        videoId: 'uuid-1',
+        storageKey: 'videos/abc123/original',
+      });
       await processor.process(job);
 
       expect(videoRepo.update).toHaveBeenCalledWith('uuid-1', {
@@ -86,12 +91,19 @@ describe('VideoProcessor', () => {
 
       videoRepo.findOne.mockResolvedValue(video as Video);
       storageService.downloadFile.mockResolvedValue(undefined);
-      ffmpegService.extractMetadata.mockRejectedValue(new Error('Invalid video format'));
+      ffmpegService.extractMetadata.mockRejectedValue(
+        new Error('Invalid video format'),
+      );
       videoRepo.update.mockResolvedValue({ affected: 1 } as any);
 
-      const job = makeJob({ videoId: 'uuid-2', storageKey: 'videos/xyz456/original' });
+      const job = makeJob({
+        videoId: 'uuid-2',
+        storageKey: 'videos/xyz456/original',
+      });
 
-      await expect(processor.process(job)).rejects.toThrow('Invalid video format');
+      await expect(processor.process(job)).rejects.toThrow(
+        'Invalid video format',
+      );
 
       expect(videoRepo.update).toHaveBeenCalledWith('uuid-2', {
         status: VideoStatus.ERROR,
@@ -102,7 +114,10 @@ describe('VideoProcessor', () => {
 
   describe('process — unknown job name', () => {
     it('should return without processing for unknown job names', async () => {
-      const job = makeJob({ videoId: 'uuid-3', storageKey: 'key' }, 'other.job');
+      const job = makeJob(
+        { videoId: 'uuid-3', storageKey: 'key' },
+        'other.job',
+      );
       await processor.process(job);
       expect(videoRepo.findOne).not.toHaveBeenCalled();
     });

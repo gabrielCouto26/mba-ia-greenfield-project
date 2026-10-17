@@ -39,16 +39,33 @@ const mockProcessingQueue = () => ({
 
 describe('VideosService', () => {
   let service: VideosService;
-  let videoRepo: jest.Mocked<Pick<Repository<Video>, 'create' | 'save' | 'findOne' | 'update'>>;
+  let videoRepo: jest.Mocked<
+    Pick<Repository<Video>, 'create' | 'save' | 'findOne' | 'update'>
+  >;
   let storageService: jest.Mocked<{
     initiateMultipartUpload: (key: string) => Promise<string>;
-    getPresignedPartUrl: (key: string, uploadId: string, part: number) => Promise<string>;
+    getPresignedPartUrl: (
+      key: string,
+      uploadId: string,
+      part: number,
+    ) => Promise<string>;
     abortMultipartUpload: (key: string, uploadId: string) => Promise<void>;
-    completeMultipartUpload: (key: string, uploadId: string, parts: Array<{ part_number: number; etag: string }>) => Promise<void>;
-    getPresignedGetUrl: (key: string, options?: { responseContentDisposition?: string }) => Promise<string>;
+    completeMultipartUpload: (
+      key: string,
+      uploadId: string,
+      parts: Array<{ part_number: number; etag: string }>,
+    ) => Promise<void>;
+    getPresignedGetUrl: (
+      key: string,
+      options?: { responseContentDisposition?: string },
+    ) => Promise<string>;
   }>;
-  let channelsService: jest.Mocked<{ findById: (id: string) => Promise<{ id: string; user_id: string } | null> }>;
-  let processingQueue: jest.Mocked<{ add: (name: string, data: object) => Promise<unknown> }>;
+  let channelsService: jest.Mocked<{
+    findById: (id: string) => Promise<{ id: string; user_id: string } | null>;
+  }>;
+  let processingQueue: jest.Mocked<{
+    add: (name: string, data: object) => Promise<unknown>;
+  }>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -57,7 +74,10 @@ describe('VideosService', () => {
         { provide: getRepositoryToken(Video), useFactory: mockVideoRepository },
         { provide: StorageService, useFactory: mockStorageService },
         { provide: ChannelsService, useFactory: mockChannelsService },
-        { provide: getQueueToken('video-processing'), useFactory: mockProcessingQueue },
+        {
+          provide: getQueueToken('video-processing'),
+          useFactory: mockProcessingQueue,
+        },
       ],
     }).compile();
 
@@ -167,7 +187,9 @@ describe('VideosService', () => {
         id: draftVideo.channel_id,
         user_id: userId,
       });
-      storageService.getPresignedPartUrl.mockResolvedValue('https://presigned.example.com/part1');
+      storageService.getPresignedPartUrl.mockResolvedValue(
+        'https://presigned.example.com/part1',
+      );
 
       const result = await service.presignPart(publicId, 1, userId);
 
@@ -332,9 +354,9 @@ describe('VideosService', () => {
     it('throws VideoNotFoundException when video does not exist', async () => {
       (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.completeUpload(publicId, parts, userId)).rejects.toThrow(
-        VideoNotFoundException,
-      );
+      await expect(
+        service.completeUpload(publicId, parts, userId),
+      ).rejects.toThrow(VideoNotFoundException);
       expect(storageService.completeMultipartUpload).not.toHaveBeenCalled();
     });
 
@@ -345,9 +367,9 @@ describe('VideosService', () => {
         user_id: 'other-user-id',
       });
 
-      await expect(service.completeUpload(publicId, parts, userId)).rejects.toThrow(
-        NotChannelOwnerException,
-      );
+      await expect(
+        service.completeUpload(publicId, parts, userId),
+      ).rejects.toThrow(NotChannelOwnerException);
       expect(storageService.completeMultipartUpload).not.toHaveBeenCalled();
     });
 
@@ -361,9 +383,9 @@ describe('VideosService', () => {
         user_id: userId,
       });
 
-      await expect(service.completeUpload(publicId, parts, userId)).rejects.toThrow(
-        UploadNotInProgressException,
-      );
+      await expect(
+        service.completeUpload(publicId, parts, userId),
+      ).rejects.toThrow(UploadNotInProgressException);
     });
 
     it('throws UploadNotInProgressException when upload_id is null', async () => {
@@ -376,9 +398,9 @@ describe('VideosService', () => {
         user_id: userId,
       });
 
-      await expect(service.completeUpload(publicId, parts, userId)).rejects.toThrow(
-        UploadNotInProgressException,
-      );
+      await expect(
+        service.completeUpload(publicId, parts, userId),
+      ).rejects.toThrow(UploadNotInProgressException);
     });
   });
 
@@ -394,20 +416,25 @@ describe('VideosService', () => {
     };
 
     it('returns presigned GET URL for ready video', async () => {
-      const presignedUrl = 'https://minio:9000/bucket/videos/streamvid1234/original?sig=abc';
+      const presignedUrl =
+        'https://minio:9000/bucket/videos/streamvid1234/original?sig=abc';
       (videoRepo.findOne as jest.Mock).mockResolvedValue(readyVideo);
       storageService.getPresignedGetUrl.mockResolvedValue(presignedUrl);
 
       const result = await service.getStreamUrl(publicId);
 
       expect(result).toBe(presignedUrl);
-      expect(storageService.getPresignedGetUrl).toHaveBeenCalledWith(readyVideo.storage_key);
+      expect(storageService.getPresignedGetUrl).toHaveBeenCalledWith(
+        readyVideo.storage_key,
+      );
     });
 
     it('throws VideoNotFoundException when video does not exist', async () => {
       (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getStreamUrl(publicId)).rejects.toThrow(VideoNotFoundException);
+      await expect(service.getStreamUrl(publicId)).rejects.toThrow(
+        VideoNotFoundException,
+      );
     });
 
     it('throws VideoNotReadyException when video status is not ready', async () => {
@@ -416,7 +443,9 @@ describe('VideosService', () => {
         status: VideoStatus.PROCESSING,
       });
 
-      await expect(service.getStreamUrl(publicId)).rejects.toThrow(VideoNotReadyException);
+      await expect(service.getStreamUrl(publicId)).rejects.toThrow(
+        VideoNotReadyException,
+      );
     });
   });
 
@@ -449,7 +478,9 @@ describe('VideosService', () => {
     it('throws VideoNotFoundException when video does not exist', async () => {
       (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getDownloadUrl(publicId)).rejects.toThrow(VideoNotFoundException);
+      await expect(service.getDownloadUrl(publicId)).rejects.toThrow(
+        VideoNotFoundException,
+      );
     });
 
     it('throws VideoNotReadyException when video status is draft', async () => {
@@ -458,7 +489,9 @@ describe('VideosService', () => {
         status: VideoStatus.DRAFT,
       });
 
-      await expect(service.getDownloadUrl(publicId)).rejects.toThrow(VideoNotReadyException);
+      await expect(service.getDownloadUrl(publicId)).rejects.toThrow(
+        VideoNotReadyException,
+      );
     });
   });
 
@@ -486,7 +519,9 @@ describe('VideosService', () => {
       const result = await service.findByPublicId(publicId);
 
       expect(result.thumbnail_url).toBe(presignedUrl);
-      expect(storageService.getPresignedGetUrl).toHaveBeenCalledWith(thumbnailKey);
+      expect(storageService.getPresignedGetUrl).toHaveBeenCalledWith(
+        thumbnailKey,
+      );
       expect(result).toMatchObject({
         id: baseVideo.id,
         public_id: publicId,
@@ -508,7 +543,9 @@ describe('VideosService', () => {
     it('throws VideoNotFoundException when video does not exist', async () => {
       (videoRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.findByPublicId(publicId)).rejects.toThrow(VideoNotFoundException);
+      await expect(service.findByPublicId(publicId)).rejects.toThrow(
+        VideoNotFoundException,
+      );
     });
   });
 });

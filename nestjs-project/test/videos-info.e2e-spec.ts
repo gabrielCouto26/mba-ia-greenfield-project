@@ -114,7 +114,9 @@ describe('videos-info', () => {
     );
   }
 
-  async function createVideoWithoutThumbnail(channelId: string): Promise<Video> {
+  async function createVideoWithoutThumbnail(
+    channelId: string,
+  ): Promise<Video> {
     const videoRepo = dataSource.getRepository(Video);
     return videoRepo.save(
       videoRepo.create({

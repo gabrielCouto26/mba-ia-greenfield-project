@@ -44,7 +44,9 @@ describe('StorageService (integration)', () => {
     const key = `test/integration/${Date.now()}/video.mp4`;
     const uploadId = await service.initiateMultipartUpload(key);
 
-    await expect(service.abortMultipartUpload(key, uploadId)).resolves.toBeUndefined();
+    await expect(
+      service.abortMultipartUpload(key, uploadId),
+    ).resolves.toBeUndefined();
   });
 
   it('completeMultipartUpload finalizes a real upload on MinIO', async () => {
@@ -64,7 +66,9 @@ describe('StorageService (integration)', () => {
     const etag = uploadRes.headers.get('etag') ?? '';
 
     await expect(
-      service.completeMultipartUpload(key, uploadId, [{ part_number: 1, etag }]),
+      service.completeMultipartUpload(key, uploadId, [
+        { part_number: 1, etag },
+      ]),
     ).resolves.toBeUndefined();
   });
 

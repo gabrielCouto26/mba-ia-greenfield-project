@@ -57,15 +57,23 @@ describe('FfmpegService', () => {
         return {} as any;
       });
 
-      await service.generateThumbnail('/tmp/input.mp4', '/tmp/thumb.jpg', '00:00:05');
+      await service.generateThumbnail(
+        '/tmp/input.mp4',
+        '/tmp/thumb.jpg',
+        '00:00:05',
+      );
 
       expect(mockExecFile).toHaveBeenCalledWith(
         'ffmpeg',
         expect.arrayContaining([
-          '-ss', '00:00:05',
-          '-i', '/tmp/input.mp4',
-          '-frames:v', '1',
-          '-y', '/tmp/thumb.jpg',
+          '-ss',
+          '00:00:05',
+          '-i',
+          '/tmp/input.mp4',
+          '-frames:v',
+          '1',
+          '-y',
+          '/tmp/thumb.jpg',
         ]),
         expect.any(Function),
       );

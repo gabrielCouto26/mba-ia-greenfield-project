@@ -38,7 +38,10 @@ describe('Video entity (integration)', () => {
   async function createChannelWithUser(): Promise<Channel> {
     const idx = ++channelCounter;
     const user = await userRepo.save(
-      userRepo.create({ email: `vid_user_${idx}@example.com`, password: 'hashed' }),
+      userRepo.create({
+        email: `vid_user_${idx}@example.com`,
+        password: 'hashed',
+      }),
     );
     return channelRepo.save(
       channelRepo.create({

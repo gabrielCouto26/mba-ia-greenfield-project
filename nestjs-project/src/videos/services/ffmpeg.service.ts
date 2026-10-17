@@ -13,7 +13,7 @@ function execFileAsync(
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     execFile(cmd, args, (error, stdout, stderr) => {
-      if (error) reject(error);
+      if (error) reject(new Error(error.message));
       else resolve({ stdout, stderr });
     });
   });

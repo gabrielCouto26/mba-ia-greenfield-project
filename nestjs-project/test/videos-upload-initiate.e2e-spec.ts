@@ -96,9 +96,7 @@ describe('videos-upload-initiate', () => {
     return channel.id;
   }
 
-  async function getUserIdFromToken(
-    access_token: string,
-  ): Promise<string> {
+  async function getUserIdFromToken(access_token: string): Promise<string> {
     const res = await request(app.getHttpServer())
       .get('/auth/me')
       .set('Authorization', `Bearer ${access_token}`);
@@ -146,12 +144,10 @@ describe('videos-upload-initiate', () => {
 
   describe('3. Authorization Failures', () => {
     it('3.1. reject-non-owner-channel — returns 403 NOT_CHANNEL_OWNER', async () => {
-      const { access_token: tokenA } = await registerConfirmAndLogin(
-        'userA@test.com',
-      );
-      const { access_token: tokenB } = await registerConfirmAndLogin(
-        'userB@test.com',
-      );
+      const { access_token: tokenA } =
+        await registerConfirmAndLogin('userA@test.com');
+      const { access_token: tokenB } =
+        await registerConfirmAndLogin('userB@test.com');
       const userBId = await getUserIdFromToken(tokenB);
       const channelBId = await getChannelIdForUser(userBId);
 
