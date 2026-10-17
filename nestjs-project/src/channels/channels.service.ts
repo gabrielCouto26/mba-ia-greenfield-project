@@ -59,4 +59,8 @@ export class ChannelsService {
       );
     });
   }
+
+  async findById(id: string): Promise<Channel | null> {
+    return this.dataSource.manager.findOne(Channel, { where: { id } });
+  }
 }

@@ -17,9 +17,13 @@
   - Module spec requires `User`, `Channel`, and `Video` in the `TypeOrmModule.forRoot` entities array because TypeORM validates all sides of declared relations at DataSource initialization.
 
 ### SI-03.3 — Upload iniciar (POST /videos)
-- **Status:** pending
-- **Tests:** 
-- **Observations:** none
+- **Status:** completed
+- **Tests:** 4 unit passing (videos.service.spec.ts) + 4 E2E passing (videos-upload-initiate.e2e-spec.ts); storage.service.integration-spec.ts skipped (requires MinIO container)
+- **Observations:**
+  - Added `transformIgnorePatterns: ["/node_modules/(?!(nanoid)/)"]` to both `package.json` Jest config and `test/jest-e2e.json` — nanoid v5 is ESM-only and was crashing ts-jest without this.
+  - Added `s3Config` and `redisConfig` to `AppModule.ConfigModule.forRoot({ load: [...] })` — they were missing and required for `StorageService` injection.
+  - E2E test overrides `StorageService` with a mock (MinIO image `minio/minio` is not pullable in this environment); `storage.service.integration-spec.ts` uses `jest.setTimeout(30000)` and requires `docker compose up -d minio` to run.
+  - Error envelope field is `error` (not `errorCode`) per `DomainExceptionFilter` — spec was generated with wrong field name; test corrected to match actual project convention (`ApiErrorEnvelope.error`).
 
 ### SI-03.4 — Upload gerenciamento: presign-part + abort
 - **Status:** pending

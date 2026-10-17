@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Channel } from '../channels/entities/channel.entity';
+import s3Config from '../config/s3.config';
 import { User } from '../users/entities/user.entity';
 import { Video } from './entities/video.entity';
 import { VideosModule } from './videos.module';
@@ -10,7 +11,7 @@ describe('VideosModule', () => {
   it('should compile successfully', async () => {
     const module = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
+        ConfigModule.forRoot({ isGlobal: true, load: [s3Config] }),
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: process.env.DB_HOST ?? 'db',
