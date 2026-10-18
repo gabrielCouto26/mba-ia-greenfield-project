@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo "🔍 [pre-commit] Typecheck..."
+
+echo "  → nestjs-project: tsc"
+(cd "$REPO_ROOT/nestjs-project" && npx tsc --noEmit)
+
+echo "✅ [pre-commit] OK"

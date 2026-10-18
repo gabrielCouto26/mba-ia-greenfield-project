@@ -13,6 +13,8 @@ docker compose ps   # all services must show status "running"
 Then verify each infrastructure service is actually ready to accept connections — not just running:
 
 - **PostgreSQL:** `docker compose exec db pg_isready -U streamtube` — expect `accepting connections`
+- **Redis:** `docker compose exec redis redis-cli ping` — expect `PONG`
+- **MinIO:** `docker compose exec minio mc ready local` — expect ready
 
 Only start the NestJS dev server (`npm run start:dev`) when the user **explicitly** asks to run the application — never as part of "start the environment".
 
@@ -34,6 +36,10 @@ docker compose exec nestjs-api npm run start:dev
 Services:
 - `nestjs-api` — NestJS API, port `3000`
 - `db` — PostgreSQL 17, port `5432`, database `streamtube`, user/password `streamtube`
+- `mailpit` — Mailpit (axllent/mailpit), ports `1025` (SMTP) / `8025` (Web UI) — email testing
+- `redis` — Redis 7 Alpine, port `6379` — BullMQ queue backend
+- `minio` — MinIO (elestio/minio), ports `9000` (API) / `9001` (Console) — S3-compatible object storage, user `streamtube` / password `streamtube123`
+- `nestjs-worker` — Worker container (Dockerfile.worker, node:25.6.0-slim + ffmpeg), no exposed ports — background video processor
 
 All verification and teardown commands run on the **host machine**:
 
@@ -148,6 +154,32 @@ NestJS with standard module structure. Source lives in `src/`, compiled output i
 
 - Each domain feature gets its own module (e.g., `UsersModule`, `VideosModule`) registered in `AppModule`
 - Controllers handle HTTP routing; Services hold business logic; both are scoped to their module
+
+## Videos Module
+
+Module at `src/videos/` — multipart upload, video processing, streaming, and download.
+
+### API Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/videos` | JWT | Initiate upload (creates draft + S3 multipart upload) |
+| POST | `/videos/:publicId/upload/presign-part` | JWT | Presign a single upload part |
+| POST | `/videos/:publicId/upload/complete` | JWT | Complete multipart upload, enqueue processing |
+| POST | `/videos/:publicId/upload/abort` | JWT | Abort multipart upload |
+| GET | `/videos/:publicId` | Public | Get video metadata, status, channel info, thumbnail URL |
+| GET | `/videos/:publicId/stream` | Public | 302 redirect to presigned S3 streaming URL |
+| GET | `/videos/:publicId/download` | Public | 302 redirect to presigned S3 download URL |
+
+### Worker
+
+The video-processing worker runs in a **separate container** (`nestjs-worker`), NOT inside the API.
+
+- Entry point: `src/worker.main.ts` bootstraps `WorkerModule` (`src/worker.module.ts`)
+- `VideoProcessor` (`src/videos/processors/video.processor.ts`) consumes the `video-processing` BullMQ queue
+- `StorageService` wraps `@aws-sdk/client-s3` for MinIO/S3 operations
+- `FfmpegService` wraps `child_process` for `ffprobe` metadata extraction and `ffmpeg` thumbnail generation
+- **FFmpeg is only available in the worker container** (`Dockerfile.worker` installs it); the API container does NOT have ffmpeg
 
 ## Code Conventions
 
