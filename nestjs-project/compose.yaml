@@ -16,6 +16,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
 
   db:
     image: postgres:17
@@ -64,6 +66,17 @@ services:
       timeout: 5s
       retries: 5
 
+  minio-init:
+    image: elestio/minio
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "mc alias set local http://minio:9000 $$S3_ACCESS_KEY_ID $$S3_SECRET_ACCESS_KEY && mc mb --ignore-existing local/$$S3_BUCKET"
+
   nestjs-worker:
     build:
       context: .
@@ -78,6 +91,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
 
 volumes:
   minio_data:
