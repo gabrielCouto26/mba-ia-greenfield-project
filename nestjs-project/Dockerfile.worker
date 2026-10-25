@@ -3,7 +3,16 @@ FROM node:25.6.0-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg procps curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /home/node/app
+RUN chown node:node /home/node/app
+
+# Install dependencies inside the image so the container is self-sufficient and
+# not dependent on a host-built node_modules (wrong arch / never installed).
+# At runtime an anonymous volume on node_modules (see compose.yaml) keeps these
+# image-installed modules from being shadowed by the bind mount.
+COPY --chown=node:node package.json package-lock.json ./
 
 USER node
+
+RUN npm ci
 
 CMD ["tail", "-f", "/dev/null"]

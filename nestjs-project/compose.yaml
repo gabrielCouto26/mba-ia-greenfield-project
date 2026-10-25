@@ -7,6 +7,7 @@ services:
       - 3000:3000
     volumes:
       - .:/home/node/app
+      - /home/node/app/node_modules
     depends_on:
       db:
         condition: service_healthy
@@ -84,6 +85,9 @@ services:
     env_file: .env
     volumes:
       - .:/home/node/app
+      # Anonymous volume: keep the image's node_modules instead of letting the
+      # bind mount above shadow it with a (possibly missing / wrong-arch) host copy.
+      - /home/node/app/node_modules
     depends_on:
       db:
         condition: service_healthy
