@@ -19,19 +19,27 @@ import type { ConfigType } from '@nestjs/config';
 @Injectable()
 export class StorageService {
   private readonly client: S3Client;
+  private readonly presignerClient: S3Client;
   private readonly bucket: string;
 
   constructor(
     @Inject(s3Config.KEY)
     private readonly config: ConfigType<typeof s3Config>,
   ) {
+    const credentials = {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    };
     this.client = new S3Client({
       endpoint: config.endpoint,
       region: config.region,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
+      credentials,
+      forcePathStyle: true,
+    });
+    this.presignerClient = new S3Client({
+      endpoint: config.publicEndpoint,
+      region: config.region,
+      credentials,
       forcePathStyle: true,
     });
     this.bucket = config.bucket;
@@ -60,7 +68,7 @@ export class StorageService {
       UploadId: uploadId,
       PartNumber: partNumber,
     });
-    return getSignedUrl(this.client, command, { expiresIn: 3600 });
+    return getSignedUrl(this.presignerClient, command, { expiresIn: 3600 });
   }
 
   async abortMultipartUpload(key: string, uploadId: string): Promise<void> {
@@ -109,7 +117,7 @@ export class StorageService {
         ResponseContentDisposition: options.responseContentDisposition,
       }),
     });
-    return getSignedUrl(this.client, command, { expiresIn: 3600 });
+    return getSignedUrl(this.presignerClient, command, { expiresIn: 3600 });
   }
 
   async uploadFile(

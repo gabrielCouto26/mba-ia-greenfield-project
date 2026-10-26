@@ -22,6 +22,7 @@ export const envValidationSchema = Joi.object({
   MAIL_FROM: Joi.string().default('"StreamTube" <noreply@streamtube.com>'),
   SWAGGER_ENABLED: Joi.string().valid('true', 'false').default('false'),
   S3_ENDPOINT: Joi.string().default('http://minio:9000'),
+  S3_PUBLIC_ENDPOINT: Joi.string().uri().optional(),
   S3_REGION: Joi.string().default('us-east-1'),
   S3_BUCKET: Joi.string().required(),
   S3_ACCESS_KEY_ID: Joi.string().required(),

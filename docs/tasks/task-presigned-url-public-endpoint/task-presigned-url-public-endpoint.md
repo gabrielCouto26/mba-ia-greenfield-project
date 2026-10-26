@@ -84,13 +84,13 @@ SI-1 (root) — config publicEndpoint + env + Joi
 
 ## Deliverables
 
-- [ ] SI-1 — Configurar endpoint público para presigning (config + env + Joi)
-- [ ] SI-2 — Cliente presigner dedicado + reescrever presigns no StorageService
+- [x] SI-1 — Configurar endpoint público para presigning (config + env + Joi)
+- [x] SI-2 — Cliente presigner dedicado + reescrever presigns no StorageService
 
 **Full test suites:**
 
-- [ ] Backend unit + integration tests pass (`docker compose exec nestjs-api npm test -- --runInBand`)
-- [ ] E2E tests pass (`docker compose exec nestjs-api npm run test:e2e`)
-- [ ] TypeScript compiles cleanly (`docker compose exec nestjs-api npx tsc --noEmit`)
-- [ ] Lint passes (`docker compose exec nestjs-api npm run lint`)
-- [ ] From the host (outside Docker), `GET /videos/:publicId/stream`, `/download`, and the `thumbnail_url` open without `curl --resolve`; `POST /videos/:publicId/upload/presign-part` + PUT succeed without `--resolve`
+- [x] Backend unit + integration tests pass (`docker compose exec nestjs-api npm test -- --runInBand`) — 33 suites, 197 tests
+- [x] E2E tests pass (`docker compose exec nestjs-api npm run test:e2e`) — 8 suites, 77 tests
+- [x] TypeScript compiles cleanly (`docker compose exec nestjs-api npx tsc --noEmit`) — 0 errors
+- [x] Lint passes (`docker compose exec nestjs-api npm run lint`) — 0 errors
+- [ ] Manual: From the host (outside Docker), `GET /videos/:publicId/stream`, `/download`, and the `thumbnail_url` open without `curl --resolve`; `POST /videos/:publicId/upload/presign-part` + PUT succeed without `--resolve`
