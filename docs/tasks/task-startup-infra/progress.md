@@ -1,7 +1,7 @@
 # task-startup-infra — Progress
 
 **Status:** in_progress
-**Stages:** 0/4 completed
+**Stages:** 2/4 completed
 
 ### Stage 1 — Completar `.env.example` com blocos S3 e Redis
 - **Status:** completed
@@ -9,7 +9,9 @@
 - **Observations:** none
 
 ### Stage 2 — Provisionar bucket MinIO via container de init one-shot
-- **Status:** pending
+- **Status:** completed
+- **Tests:** no tests (infra Compose change; validated by `docker compose config` — exit 0)
+- **Observations:** none
 
 ### Stage 3 — Isolar `node_modules` entre imagem e bind mount
 - **Status:** pending
