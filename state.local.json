@@ -1,9 +1,10 @@
 {
   "projectState": {
     "projectName": "StreamTube",
-    "lastUpdate": "2026-10-16",
-    "branch": "feature/phase-03-videos",
-    "overview": "StreamTube is a YouTube-like video sharing platform built as an MBA greenfield challenge. Monorepo with NestJS 11 backend (nestjs-project/) and Next.js 16 frontend (next-frontend/). Phases 01 (base config) and 02 (auth — backend + frontend) are fully implemented and tested. Phase 03 (video upload and processing) is actively under implementation: SIs 03.1 through 03.6 are completed (Docker Compose infrastructure with Redis and MinIO, Video entity with migration, upload initiation, presign-part and abort multipart upload management, BullMQ queue setup, and upload complete endpoint). Next up are SI-03.7 through SI-03.9 (FFmpeg worker, streaming/download, and video metadata retrieval).",
+    "lastUpdate": "2026-10-26",
+    "branch": "fix/startup-infra",
+    "overview": "StreamTube is a YouTube-like video sharing platform built as an MBA greenfield challenge. Monorepo with a NestJS 11 backend (nestjs-project/) and a Next.js 16 frontend (next-frontend/). Phases 01 (base config), 02 (auth — backend + frontend) and 03 (video upload and processing) are fully implemented, tested and merged into main. Phase 03 delivered all 9 Small Increments: Docker Compose infra (Redis + MinIO), the Video entity and migration, the full S3 multipart upload lifecycle (initiate, presign-part, abort, complete), the BullMQ video-processing queue, a dedicated FFmpeg worker container, video streaming/download via presigned-GET redirects, and the public video-info endpoint.",
+    "overviewWorkingTree": "The working tree is currently on branch fix/startup-infra with staged-but-uncommitted planning artifacts for a new task, task-startup-infra: a Docker startup/infra reliability fix for the Phase 03 stack so a clean `docker compose up -d --build` is operational on any host. Its research, technical decisions, consolidated context and validation (status: clean) are written; implementation of the fix has NOT started yet.",
     "importantDocumentationFiles": [
       {
         "path": "CLAUDE.md",
@@ -11,63 +12,47 @@
       },
       {
         "path": "docs/project-plan.md",
-        "purpose": "Full project roadmap: all phases (01–05+), their scope, dependencies, and deliverables. Essential context for understanding what has been built and what comes next."
+        "purpose": "Full project roadmap: all phases (01–05+), their scope, dependencies, and deliverables. Essential context for what has been built and what comes next."
+      },
+      {
+        "path": "docs/tasks/task-startup-infra/context.md",
+        "purpose": "Consolidated context for the in-progress task-startup-infra: scope, the 3 decided TDs (MinIO bucket provisioning, worker entity-graph registration, node_modules isolation), inherited Phase 03 decisions and conventions, and testing requirements. Read this to continue the startup-infra fix."
+      },
+      {
+        "path": "docs/tasks/task-startup-infra/validation.md",
+        "purpose": "Validation record for task-startup-infra — status: clean, 0 issues. Confirms the plan is ready for implementation."
+      },
+      {
+        "path": "docs/decisions/technical-decisions-startup-infra.md",
+        "purpose": "Technical decisions for the startup-infra fix: TD-01 (one-shot minio-init container provisioning the bucket via service_completed_successfully), TD-02 (worker TypeOrmModule.forFeature registering Video+Channel+User for relation metadata), TD-03 (bake npm ci into each image + anonymous volume to isolate node_modules from the bind mount)."
       },
       {
         "path": "docs/phases/phase-03-videos/phase-03-videos.md",
-        "purpose": "Executable plan for Phase 03 backend: contains all 9 Small Increments (SIs 03.1–03.9), Technical Specs (Data Model, API Contracts, Authorization Matrix, Error Catalog, Events/Messages), Dependency Map, and Deliverables."
+        "purpose": "Executable plan for Phase 03 backend: all 9 Small Increments (SIs 03.1–03.9), Technical Specs (Data Model, API Contracts, Authorization Matrix, Error Catalog, Events/Messages), Dependency Map, and Deliverables."
       },
       {
         "path": "docs/phases/phase-03-videos/progress.md",
-        "purpose": "Execution tracking for Phase 03: current status of each SI (completed vs pending), test results, and implementation observations/gotchas."
+        "purpose": "Execution tracking for Phase 03 (all SIs completed): per-SI status, test counts, and implementation observations/gotchas — the most detailed record of how the video pipeline was built."
       },
       {
         "path": "docs/phases/phase-03-videos/context.md",
-        "purpose": "Consolidated context for Phase 03: scope, decisions index, capability coverage matrix, decisions detail with recommendations, inherited conventions and deferred capabilities, testing requirements."
-      },
-      {
-        "path": "docs/phases/phase-03-videos/validation.md",
-        "purpose": "Plan validation record for Phase 03: gaps identified and resolved prior to plan build, confirming clean status."
+        "purpose": "Consolidated context for Phase 03: scope, decisions index, capability coverage matrix, decisions detail, inherited conventions and deferred capabilities, testing requirements."
       },
       {
         "path": "docs/decisions/technical-decisions-phase-03-videos.md",
-        "purpose": "Phase 03 technical decisions: 6 TDs all decided — BullMQ+Redis queue, S3 multipart presigned URLs for 10GB upload, presigned GET redirect for streaming, separate worker container, nanoid for unique URLs, direct child_process for FFmpeg."
-      },
-      {
-        "path": "desafio/escopo.md",
-        "purpose": "Detailed scope for Phase 03: capabilities to deliver, open architectural decisions (queue tech, upload strategy, worker/FFmpeg, unique URLs, streaming)."
-      },
-      {
-        "path": "desafio/workflow.md",
-        "purpose": "Mandatory planning pipeline for Phase 03: research → plan-context → plan-validate → plan-resolve → plan-build → implement. Lists expected artifacts and folder format."
-      },
-      {
-        "path": "desafio/requisitos.md",
-        "purpose": "Detailed technical requirements for Phase 03 covering all implementation steps."
-      },
-      {
-        "path": "desafio/criterios-de-aceite.md",
-        "purpose": "Mandatory acceptance criteria for Phase 03 and causes for automatic rejection (e.g., skipping the planning workflow)."
-      },
-      {
-        "path": "desafio/regras.md",
-        "purpose": "Project rules: Definition of Done, Docker-only infra, library docs via context7, Git Flow, test file suffix conventions."
-      },
-      {
-        "path": "desafio/conclusao-debate-arquitetural.md",
-        "purpose": "Architectural debate conclusion for Phase 03 — rationale behind the 6 TD decisions and tradeoff analysis."
+        "purpose": "Phase 03 technical decisions: 7 TDs — BullMQ+Redis queue, S3 multipart presigned URLs (10GB upload), presigned-GET 302 redirect streaming, separate worker container, nanoid 11-char publicId, direct child_process for FFmpeg, 4-state status model with error_reason."
       },
       {
         "path": "docs/decisions/technical-decisions-phase-02-auth.md",
-        "purpose": "Technical decisions for the backend auth phase — JWT strategy, token storage, email confirmation flow. Reference for patterns when building Phase 03."
+        "purpose": "Technical decisions for the backend auth phase — JWT strategy, token storage, email confirmation flow. Reference for backend patterns."
       },
       {
         "path": "docs/decisions/technical-decisions-phase-02-auth-frontend.md",
-        "purpose": "Technical decisions for the auth frontend: session management (cookie-based, BFF pattern), OpenAPI typing, MSW mock strategy."
+        "purpose": "Technical decisions for the auth frontend: session management (cookie-based BFF pattern), OpenAPI typing, MSW mock strategy."
       },
       {
         "path": "docs/phases/phase-02-auth/phase-02-auth.md",
-        "purpose": "Executable plan for Phase 02 backend (SIs, Technical Specs, Dependency Map). Best reference for the planning format expected in Phase 03."
+        "purpose": "Executable plan for Phase 02 backend (SIs, Technical Specs, Dependency Map). Reference for the planning document format."
       },
       {
         "path": "docs/phases/phase-02-auth-frontend/phase-02-auth-frontend.md",
@@ -75,7 +60,7 @@
       },
       {
         "path": "nestjs-project/CLAUDE.md",
-        "purpose": "NestJS-specific coding conventions enforced by Claude rules: module structure, service patterns, DTO rules, entity conventions, testing approach."
+        "purpose": "NestJS-specific conventions enforced by Claude rules: module structure, service patterns, DTO rules, entity conventions, testing approach. Also documents that `docker compose up` brings up infra only; API/worker start manually (start:dev / start:worker)."
       },
       {
         "path": "next-frontend/CLAUDE.md",
@@ -88,6 +73,14 @@
       {
         "path": "docs/design-system-ai-implementable.md",
         "purpose": "Design system tokens and component specs for the frontend, derived from the FC Tube Figma file. Reference when building UI screens."
+      },
+      {
+        "path": "desafio/criterios-de-aceite.md",
+        "purpose": "Mandatory acceptance criteria for Phase 03 and causes for automatic rejection (e.g., skipping the planning workflow)."
+      },
+      {
+        "path": "desafio/regras.md",
+        "purpose": "Project rules: Definition of Done, Docker-only infra, library docs via context7, Git Flow, test file suffix conventions."
       }
     ],
     "implementedFeatures": [
@@ -129,96 +122,48 @@
         "notes": "OpenAPI types generated into lib/api/types.gen.ts. MSW enabled via MSW_ENABLED=true env var at server startup. Design system: Tailwind CSS 4, custom UI primitives in components/ui/. Playwright for E2E tests, Vitest for unit tests."
       },
       {
-        "name": "Phase 03 — Planning Artifacts",
-        "summary": "All 6 technical decisions finalized, context document compiled, validation completed with clean status, and executable phase plan created with 9 SIs.",
+        "name": "Phase 03 — Video Upload & Processing (complete, merged to main)",
+        "summary": "End-to-end video pipeline across all 9 SIs: S3 multipart upload for files up to 10GB (initiate, presign-part, complete, abort), BullMQ video-processing queue, a dedicated FFmpeg worker container that extracts metadata (ffprobe) and generates a thumbnail (ffmpeg) then marks the video READY/FAILED, presigned-GET 302 redirects for streaming and download, and a public video-info endpoint. All SIs tested (unit + integration + E2E).",
         "mainFiles": [
-          "docs/decisions/technical-decisions-phase-03-videos.md",
-          "docs/phases/phase-03-videos/context.md",
-          "docs/phases/phase-03-videos/validation.md",
-          "docs/phases/phase-03-videos/phase-03-videos.md"
-        ],
-        "notes": "TD-01 (BullMQ+Redis), TD-02 (S3 Multipart presigned URLs), TD-03 (Presigned GET 302 redirect), TD-04 (Separate worker container), TD-05 (nanoid 11 chars), TD-06 (Direct child_process for FFmpeg)."
-      },
-      {
-        "name": "Phase 03 — SI-03.1: Infrastructure (Redis, MinIO)",
-        "summary": "Added Redis and MinIO services to compose.yaml. Created redisConfig and s3Config namespaced configs and validated environment variables with Joi.",
-        "mainFiles": [
-          "nestjs-project/compose.yaml",
-          "nestjs-project/src/config/redis.config.ts",
-          "nestjs-project/src/config/s3.config.ts",
-          "nestjs-project/src/config/env.validation.ts"
-        ],
-        "notes": "MinIO configured with local storage volumes, S3 port 9000, console 9001. Redis service on port 6379."
-      },
-      {
-        "name": "Phase 03 — SI-03.2: Video Entity, Migration & Module",
-        "summary": "Implemented Video entity with VideoStatus enum, nanoid publicId, duration, storageKeys, thumbnail, and relation to Channel. Added migration 1792201054775-CreateVideos.ts and initialized VideosModule.",
-        "mainFiles": [
+          "nestjs-project/src/videos/controllers/videos.controller.ts",
+          "nestjs-project/src/videos/services/videos.service.ts",
+          "nestjs-project/src/videos/services/storage.service.ts",
+          "nestjs-project/src/videos/services/ffmpeg.service.ts",
+          "nestjs-project/src/videos/processors/video.processor.ts",
           "nestjs-project/src/videos/entities/video.entity.ts",
-          "nestjs-project/src/database/migrations/1792201054775-CreateVideos.ts",
-          "nestjs-project/src/videos/videos.module.ts"
+          "nestjs-project/src/worker.main.ts",
+          "nestjs-project/src/worker.module.ts",
+          "nestjs-project/Dockerfile.worker",
+          "nestjs-project/compose.yaml"
         ],
-        "notes": "Status transitions: DRAFT -> UPLOADING -> PROCESSING -> READY (or FAILED). Video linked to Channel entity via ManyToOne with onDelete CASCADE."
+        "notes": "Video status model: DRAFT -> UPLOADING -> PROCESSING -> READY (or FAILED, with error_reason). publicId is an 11-char nanoid (varchar(11) column). VideoProcessor extends WorkerHost from @nestjs/bullmq v12 and routes by job.name; it is registered ONLY in WorkerModule (not VideosModule) to keep FFmpeg work out of the API process (TD-04). FfmpegService wraps child_process.execFile with an explicit Promise (not util.promisify) for testability. Stream/download use @Redirect + @Public with a dynamic presigned URL (302)."
       },
       {
-        "name": "Phase 03 — SI-03.3: Initiate Upload (POST /videos)",
-        "summary": "Implemented endpoint to initiate video creation and multipart upload with AWS S3 SDK (@aws-sdk/client-s3). Generates nanoid slug, creates DRAFT record, initiates multipart upload, transitions to UPLOADING, and returns uploadId + publicId.",
+        "name": "task-startup-infra — Planning Artifacts (in progress, uncommitted)",
+        "summary": "Research, technical decisions, consolidated context and a clean validation for a Docker startup/infra reliability fix of the Phase 03 stack. Three decisions are finalized; implementation of the actual code/compose changes has not begun.",
         "mainFiles": [
-          "nestjs-project/src/videos/controllers/videos.controller.ts",
-          "nestjs-project/src/videos/services/videos.service.ts",
-          "nestjs-project/src/videos/services/storage.service.ts",
-          "nestjs-project/src/videos/dto/create-video.dto.ts"
+          "docs/decisions/technical-decisions-startup-infra.md",
+          "docs/tasks/task-startup-infra/context.md",
+          "docs/tasks/task-startup-infra/validation.md"
         ],
-        "notes": "Requires authentication. Validates that authenticated user owns the destination channel. Uses StorageService wrapper for S3 CreateMultipartUploadCommand."
-      },
-      {
-        "name": "Phase 03 — SI-03.4: Upload Management (Presign-Part & Abort)",
-        "summary": "Implemented POST /videos/:publicId/upload/part (presign upload part URL using @aws-sdk/s3-request-presigner) and POST /videos/:publicId/upload/abort (aborts S3 multipart upload and marks video status FAILED).",
-        "mainFiles": [
-          "nestjs-project/src/videos/controllers/videos.controller.ts",
-          "nestjs-project/src/videos/services/videos.service.ts",
-          "nestjs-project/src/videos/services/storage.service.ts",
-          "nestjs-project/src/videos/dto/presign-part.dto.ts"
-        ],
-        "notes": "UploadPartCommand signed with expiry. AbortMultipartUploadCommand deletes pending S3 parts. Verifies video ownership and UPLOADING state."
-      },
-      {
-        "name": "Phase 03 — SI-03.5: BullMQ Queue Infrastructure",
-        "summary": "Configured @nestjs/bullmq and BullMQ with Redis connection. Registered 'video-processing' queue in VideosModule. Added ioredis and resolved Jest ESM transformIgnorePatterns.",
-        "mainFiles": [
-          "nestjs-project/src/videos/videos.module.ts",
-          "nestjs-project/src/app.module.ts",
-          "nestjs-project/package.json"
-        ],
-        "notes": "BullModule.forRootAsync connected to Redis using redisConfig. Queue injected with @InjectQueue('video-processing')."
-      },
-      {
-        "name": "Phase 03 — SI-03.6: Complete Upload (POST /videos/:publicId/upload/complete)",
-        "summary": "Implemented complete upload endpoint: finalizes S3 multipart upload via CompleteMultipartUploadCommand, transitions video status to PROCESSING, and enqueues job into 'video-processing' BullMQ queue.",
-        "mainFiles": [
-          "nestjs-project/src/videos/controllers/videos.controller.ts",
-          "nestjs-project/src/videos/services/videos.service.ts",
-          "nestjs-project/src/videos/services/storage.service.ts",
-          "nestjs-project/src/videos/dto/complete-upload.dto.ts"
-        ],
-        "notes": "Payload accepts parts array with PartNumber and ETag. Verifies video status is UPLOADING and channel ownership before completing upload and enqueuing job."
+        "notes": "TD-01: add a one-shot minio-init container (image with mc) that creates the $S3_BUCKET bucket idempotently (mc mb --ignore-existing); API and worker depend on it via condition: service_completed_successfully. TD-02: worker WorkerModule registers TypeOrmModule.forFeature([Video, Channel, User]) so the Video relation graph resolves in the worker's DataSource. TD-03: COPY package manifests + RUN npm ci inside Dockerfile.dev and Dockerfile.worker, plus an anonymous volume (- /home/node/app/node_modules) in compose.yaml so the source bind mount does not shadow the image's node_modules. Also add S3/Redis blocks to .env.example (hosts by Compose service name: minio, redis). Validation is clean (0 issues)."
       }
     ],
     "whereDevelopmentStopped": {
-      "inProgress": "Phase 03 implementation (5/9 SIs completed). SIs 03.1 to 03.6 are committed and tested. Current progress stopped before SI-03.7 (Video processing worker with FFmpeg and BullMQ consumer).",
+      "inProgress": "On branch main with uncommitted planning artifacts for task-startup-infra. The planning pipeline (research -> context -> validation=clean) is complete; implementation of the startup/infra fix has not started. Phase 03 is fully implemented and merged.",
       "nextSteps": [
-        "Implement SI-03.7: Video processing worker (BullMQ processor for 'video-processing' queue, child_process wrapper for FFmpeg/ffprobe extracting metadata and generating thumbnail, updating video to READY or FAILED).",
-        "Implement SI-03.8: Video streaming & download endpoints (GET /videos/:publicId/stream and GET /videos/:publicId/download with presigned GET redirect 302).",
-        "Implement SI-03.9: Video info endpoint (GET /videos/:publicId returning public metadata, status, channel info, and thumbnail URL).",
-        "Update docs/phases/phase-03-videos/progress.md upon completing remaining SIs.",
-        "Export updated OpenAPI specification with openapi:export to reflect new video endpoints.",
-        "Generate updated TypeScript types in next-frontend with openapi-typescript."
+        "Create a fresh bugfix/* branch from the integration branch to implement task-startup-infra (do not commit directly to main).",
+        "Implement TD-01: add the one-shot minio-init service to nestjs-project/compose.yaml and wire API + worker depends_on with condition: service_completed_successfully.",
+        "Implement TD-02: change WorkerModule's TypeOrmModule.forFeature from [Video] to [Video, Channel, User] (add a WorkerModule compilation unit test).",
+        "Implement TD-03: add COPY package.json/package-lock.json + RUN npm ci to Dockerfile.dev and Dockerfile.worker, and add the anonymous node_modules volume to nestjs-api and nestjs-worker in compose.yaml.",
+        "Add the S3 and Redis variable blocks to nestjs-project/.env.example (service-name hosts).",
+        "Close out the Definition of Done: clean `docker compose up -d --build` (bucket created, worker initializes), full test suite green, npx tsc --noEmit = 0, npm run lint."
       ],
       "pendingTechnicalDebts": [
-        "SI-03.7 pending: worker Dockerfile and standalone worker entry point (worker.main.ts) with FFmpeg binary.",
-        "SI-03.8 pending: presigned GET streaming redirection.",
-        "SI-03.9 pending: video details endpoint and public retrieval permissions.",
-        "Integration specs requiring real MinIO and Redis containers (storage.service.integration-spec.ts and entity tests) require running Docker containers."
+        "task-startup-infra implementation is pending — only the planning docs exist; the compose.yaml, Dockerfile.dev, Dockerfile.worker, worker.module.ts and .env.example changes are not yet applied.",
+        "On a clean clone, `docker compose up` currently does not provision the MinIO bucket and the worker's DataSource fails to resolve Video relations (the exact problems task-startup-infra addresses).",
+        "Several integration specs (storage.service.integration-spec.ts) and MinIO/Redis-dependent E2E paths require running Docker containers and are skipped/mocked otherwise.",
+        "Frontend (next-frontend) has no video UI yet — upload/playback screens remain to be built in a later phase."
       ]
     },
     "endpointsAndAPIs": {
@@ -234,35 +179,38 @@
         "POST /auth/logout — invalidate refresh token, clear cookies",
         "GET /auth/me — get current authenticated user info",
         "POST /videos — initiate video creation and multipart upload (SI-03.3)",
-        "POST /videos/:publicId/upload/part — presign URL for multipart upload part (SI-03.4)",
-        "POST /videos/:publicId/upload/abort — abort multipart upload (SI-03.4)",
-        "POST /videos/:publicId/upload/complete — complete multipart upload & enqueue processing job (SI-03.6)"
+        "POST /videos/:publicId/upload/presign-part — presign URL for a multipart upload part (SI-03.4)",
+        "POST /videos/:publicId/upload/complete — complete multipart upload & enqueue processing job (SI-03.6)",
+        "POST /videos/:publicId/upload/abort — abort multipart upload, mark FAILED (SI-03.4)",
+        "GET /videos/:publicId — public video metadata, status, channel info, thumbnail URL (SI-03.9)",
+        "GET /videos/:publicId/stream — 302 redirect to presigned GET URL for streaming (SI-03.8)",
+        "GET /videos/:publicId/download — 302 redirect to presigned GET URL with attachment header (SI-03.8)"
       ],
       "notImplemented": [
-        "GET /videos/:publicId — get video metadata and status (SI-03.9)",
-        "GET /videos/:publicId/stream — redirect to presigned GET URL for streaming 302 (SI-03.8)",
-        "GET /videos/:publicId/download — redirect to presigned GET URL with download attachment header 302 (SI-03.8)",
-        "Worker: BullMQ processor for video-processing queue (ffprobe metadata + ffmpeg thumbnail) (SI-03.7)"
+        "Comments, likes, subscriptions endpoints (future phases)",
+        "Channel management / listing endpoints beyond auto-creation (future phases)",
+        "Video listing / feed endpoints (future phases)"
       ]
     },
     "relevantFileStructure": [
       "nestjs-project/src/auth/ — JWT auth module (controller, service, guards, decorators, DTOs, entities)",
       "nestjs-project/src/users/ — users module (entity, service)",
       "nestjs-project/src/channels/ — channels module (entity, service, nickname.util.ts)",
-      "nestjs-project/src/videos/ — videos module (controller, service, storage service, entities, DTOs)",
+      "nestjs-project/src/videos/ — videos module: controllers/, services/ (videos, storage, ffmpeg), processors/ (video.processor.ts), entities/, dto/",
+      "nestjs-project/src/worker.main.ts + worker.module.ts — standalone worker entry point (NestFactory.createApplicationContext) and module",
       "nestjs-project/src/mail/ — mail module (nodemailer-based, Handlebars templates)",
-      "nestjs-project/src/config/ — environment validation, app/auth/database/mail/swagger/s3/redis configs",
-      "nestjs-project/src/database/migrations/ — TypeORM migration files (users, auth tokens, videos)",
-      "nestjs-project/src/common/ — DomainException, filters (domain + validation), OpenAPI envelope DTO",
-      "nestjs-project/compose.yaml — Docker Compose: nestjs-api, db (postgres:17), mailpit, redis, minio",
+      "nestjs-project/src/config/ — env validation + app/auth/database/mail/swagger/s3/redis configs",
+      "nestjs-project/src/database/migrations/ — TypeORM migrations (users, auth tokens, videos)",
+      "nestjs-project/src/common/ — DomainException, filters, OpenAPI envelope DTO",
+      "nestjs-project/Dockerfile.dev + Dockerfile.worker — API and FFmpeg worker images",
+      "nestjs-project/compose.yaml — Docker Compose: nestjs-api, nestjs-worker, db (postgres:17), mailpit, redis, minio",
       "next-frontend/app/(auth)/ — auth route group: login, signup, forgot-password pages",
-      "next-frontend/components/auth/ — auth form components",
-      "next-frontend/components/ui/ — design system primitives (button, card, input, checkbox, label, icon-button)",
-      "next-frontend/lib/api/ — types.gen.ts (OpenAPI types), contracts.ts, upstream.ts",
-      "next-frontend/lib/auth/ — session.ts, refresh.ts, error-mapping.ts",
-      "next-frontend/mocks/ — MSW handlers (auth.ts), server setup",
-      "docs/decisions/ — technical decision files for each phase",
-      "docs/phases/phase-03-videos/ — Phase 03 artifacts (context.md, validation.md, phase-03-videos.md, progress.md)",
+      "next-frontend/components/ — auth/ form components and ui/ design-system primitives",
+      "next-frontend/lib/ — api/ (types.gen.ts, contracts, upstream), auth/ (session, refresh, error-mapping)",
+      "next-frontend/mocks/ — MSW handlers and server setup",
+      "docs/decisions/ — technical decision files (per phase + startup-infra)",
+      "docs/phases/ — phase planning artifacts (01, 02-auth, 02-auth-frontend, 03-videos)",
+      "docs/tasks/ — ad-hoc task artifacts (incl. task-startup-infra)",
       "desafio/ — Phase 03 MBA challenge files (scope, workflow, requirements, acceptance criteria)"
     ],
     "usefulCommands": {
@@ -280,24 +228,30 @@
       "migration_run": "cd nestjs-project && npm run migration:run",
       "migration_generate": "cd nestjs-project && npm run migration:generate -- src/database/migrations/<MigrationName>",
       "openapi_export": "cd nestjs-project && npm run openapi:export",
-      "seed": "cd nestjs-project && npm run seed",
-      "docker_up_backend": "cd nestjs-project && docker compose up -d"
+      "start_api": "cd nestjs-project && npm run start:dev",
+      "start_worker": "cd nestjs-project && npm run start:worker",
+      "docker_up": "cd nestjs-project && docker compose up -d --build"
     },
     "conventionsAndPatterns": [
       "Docker Compose service names as hosts — never localhost/127.0.0.1 in config",
-      "NestJS modules: one module per domain, TypeOrmModule.forFeature([Entity]) in each module, never forRootAsync in feature modules",
-      "NestJS services: own only their domain's entities; cross-domain via service injection, not direct repository access",
+      "`docker compose up` brings up infrastructure only; nestjs-api and nestjs-worker idle (tail -f /dev/null); the server, worker and migrations are manual steps (start:dev, start:worker, migration:run)",
+      "NestJS modules: one module per domain; TypeOrmModule.forFeature([Entity]) in each module; forRootAsync only at app/worker root (never in feature modules)",
+      "An entity is only discovered (even with autoLoadEntities: true) if some module registers it via forFeature — the root cause behind the worker entity-graph decision",
+      "NestJS services own only their domain's entities; cross-domain access via service injection, not direct repository access",
       "Config: @nestjs/config with namespaced registerAs(name, () => ({...})) factories — one file per domain in src/config/",
       "Env validation: Joi schema in src/config/env.validation.ts passed to ConfigModule.forRoot",
       "DomainException (common/exceptions/domain.exception.ts) for business rule violations, caught by DomainExceptionFilter",
-      "All NestJS routes protected by JwtAuthGuard globally; use @Public() decorator to expose public routes",
-      "Test file suffixes: .spec.ts (unit), .integration-spec.ts (integration), .e2e-spec.ts (E2E) — Jest filters by regex",
-      "Next.js BFF pattern: client calls /api/* route handlers, which forward to NestJS; client never calls NestJS directly",
+      "All NestJS routes protected by JwtAuthGuard globally; use @Public() decorator to expose public routes (e.g. video info/stream/download)",
+      "BullMQ worker: VideoProcessor extends WorkerHost from @nestjs/bullmq and routes by job.name in a single process() method; registered only in WorkerModule",
+      "FFmpeg: thin child_process.execFile wrapper (FfmpegService) with an explicit Promise — no fluent-ffmpeg dependency",
+      "Test file suffixes: .spec.ts (unit), .integration-spec.ts (integration), .e2e-spec.ts (E2E) — Jest filters by regex; e2e runs in band",
+      "Next.js BFF pattern: client calls /api/* route handlers which forward to NestJS; client never calls NestJS directly",
       "OpenAPI types: lib/api/types.gen.ts — regenerate after backend changes with openapi:export + openapi-typescript",
       "MSW mocks: next-frontend/mocks/handlers/ — enabled via MSW_ENABLED=true env var (server-side MSW)",
       "RHF + Zod for frontend forms; error mapping via lib/auth/error-mapping.ts",
-      "Git Flow: feature/* and bugfix/* branches from dev, merge to dev; dev → main when stable",
-      "Definition of Done: tests pass + full suite passes + tsc --noEmit exits 0 + npm run lint passes"
+      "Git Flow: feature/* and bugfix/* branches from dev, merge to dev; dev -> main when stable; never commit directly to main",
+      "Definition of Done: relevant + full test suite passes + tsc --noEmit exits 0 + npm run lint passes",
+      "Phase workflow is mandatory (research -> plan-context -> plan-validate -> plan-resolve -> plan-build -> implement); implementing without the research/planning artifacts is automatic rejection"
     ]
   }
 }
