@@ -2,9 +2,8 @@
   "projectState": {
     "projectName": "StreamTube",
     "lastUpdate": "2026-10-26",
-    "branch": "fix/startup-infra",
-    "overview": "StreamTube is a YouTube-like video sharing platform built as an MBA greenfield challenge. Monorepo with a NestJS 11 backend (nestjs-project/) and a Next.js 16 frontend (next-frontend/). Phases 01 (base config), 02 (auth — backend + frontend) and 03 (video upload and processing) are fully implemented, tested and merged into main. Phase 03 delivered all 9 Small Increments: Docker Compose infra (Redis + MinIO), the Video entity and migration, the full S3 multipart upload lifecycle (initiate, presign-part, abort, complete), the BullMQ video-processing queue, a dedicated FFmpeg worker container, video streaming/download via presigned-GET redirects, and the public video-info endpoint.",
-    "overviewWorkingTree": "The working tree is currently on branch fix/startup-infra with staged-but-uncommitted planning artifacts for a new task, task-startup-infra: a Docker startup/infra reliability fix for the Phase 03 stack so a clean `docker compose up -d --build` is operational on any host. Its research, technical decisions, consolidated context and validation (status: clean) are written; implementation of the fix has NOT started yet.",
+    "branch": "fix/minio-public-endpoint",
+    "overview": "StreamTube is a YouTube-like video sharing platform built as an MBA greenfield challenge. Monorepo with a NestJS 11 backend (nestjs-project/) and a Next.js 16 frontend (next-frontend/). Phases 01 (base config), 02 (auth — backend + frontend) and 03 (video upload and processing) are fully implemented, tested and merged into main. Phase 03 delivered all 9 Small Increments: Docker Compose infra (Redis + MinIO), the Video entity and migration, the full S3 multipart upload lifecycle (initiate, presign-part, abort, complete), the BullMQ video-processing queue, a dedicated FFmpeg worker container, video streaming/download via presigned-GET redirects, and the public video-info endpoint. The startup/infra reliability fix (task-startup-infra) and the presigned-URL public-endpoint fix (task-presigned-url-public-endpoint) have both been fully implemented and committed on this branch.",
     "importantDocumentationFiles": [
       {
         "path": "CLAUDE.md",
@@ -15,16 +14,24 @@
         "purpose": "Full project roadmap: all phases (01–05+), their scope, dependencies, and deliverables. Essential context for what has been built and what comes next."
       },
       {
-        "path": "docs/tasks/task-startup-infra/context.md",
-        "purpose": "Consolidated context for the in-progress task-startup-infra: scope, the 3 decided TDs (MinIO bucket provisioning, worker entity-graph registration, node_modules isolation), inherited Phase 03 decisions and conventions, and testing requirements. Read this to continue the startup-infra fix."
+        "path": "docs/tasks/task-presigned-url-public-endpoint/task-presigned-url-public-endpoint.md",
+        "purpose": "Executable plan for the COMPLETED task: 2 SIs (SI-1 config publicEndpoint + env + Joi; SI-2 dedicated presigner S3Client + rewrite presigns in StorageService). All deliverables checked off except the manual host-level acceptance test."
       },
       {
-        "path": "docs/tasks/task-startup-infra/validation.md",
-        "purpose": "Validation record for task-startup-infra — status: clean, 0 issues. Confirms the plan is ready for implementation."
+        "path": "docs/tasks/task-presigned-url-public-endpoint/progress.md",
+        "purpose": "Execution log for the completed task: per-SI status, files changed, observations (MinIO SigV4 host validation, internalTestClient pattern in integration tests), and Definition of Done checklist."
+      },
+      {
+        "path": "docs/tasks/task-presigned-url-public-endpoint/context.md",
+        "purpose": "Consolidated context for the completed task: scope, the 3 decided TDs (split endpoint, dedicated presigner client, optional S3_PUBLIC_ENDPOINT with fallback), inherited Phase 03 + startup-infra + Phase 01 config decisions, and the testing requirements."
+      },
+      {
+        "path": "docs/decisions/technical-decisions-presigned-url-public-endpoint.md",
+        "purpose": "Technical decisions for the completed task: TD-01 (split endpoint), TD-02 (dedicated second S3Client), TD-03 (optional S3_PUBLIC_ENDPOINT, Joi .uri() optional, fallback chain)."
       },
       {
         "path": "docs/decisions/technical-decisions-startup-infra.md",
-        "purpose": "Technical decisions for the startup-infra fix: TD-01 (one-shot minio-init container provisioning the bucket via service_completed_successfully), TD-02 (worker TypeOrmModule.forFeature registering Video+Channel+User for relation metadata), TD-03 (bake npm ci into each image + anonymous volume to isolate node_modules from the bind mount)."
+        "purpose": "Technical decisions for the already-implemented startup-infra fix."
       },
       {
         "path": "docs/phases/phase-03-videos/phase-03-videos.md",
@@ -35,32 +42,8 @@
         "purpose": "Execution tracking for Phase 03 (all SIs completed): per-SI status, test counts, and implementation observations/gotchas — the most detailed record of how the video pipeline was built."
       },
       {
-        "path": "docs/phases/phase-03-videos/context.md",
-        "purpose": "Consolidated context for Phase 03: scope, decisions index, capability coverage matrix, decisions detail, inherited conventions and deferred capabilities, testing requirements."
-      },
-      {
-        "path": "docs/decisions/technical-decisions-phase-03-videos.md",
-        "purpose": "Phase 03 technical decisions: 7 TDs — BullMQ+Redis queue, S3 multipart presigned URLs (10GB upload), presigned-GET 302 redirect streaming, separate worker container, nanoid 11-char publicId, direct child_process for FFmpeg, 4-state status model with error_reason."
-      },
-      {
-        "path": "docs/decisions/technical-decisions-phase-02-auth.md",
-        "purpose": "Technical decisions for the backend auth phase — JWT strategy, token storage, email confirmation flow. Reference for backend patterns."
-      },
-      {
-        "path": "docs/decisions/technical-decisions-phase-02-auth-frontend.md",
-        "purpose": "Technical decisions for the auth frontend: session management (cookie-based BFF pattern), OpenAPI typing, MSW mock strategy."
-      },
-      {
-        "path": "docs/phases/phase-02-auth/phase-02-auth.md",
-        "purpose": "Executable plan for Phase 02 backend (SIs, Technical Specs, Dependency Map). Reference for the planning document format."
-      },
-      {
-        "path": "docs/phases/phase-02-auth-frontend/phase-02-auth-frontend.md",
-        "purpose": "Executable plan for Phase 02 frontend. Reference for frontend SI format and Technical Specs."
-      },
-      {
         "path": "nestjs-project/CLAUDE.md",
-        "purpose": "NestJS-specific conventions enforced by Claude rules: module structure, service patterns, DTO rules, entity conventions, testing approach. Also documents that `docker compose up` brings up infra only; API/worker start manually (start:dev / start:worker)."
+        "purpose": "NestJS-specific conventions enforced by Claude rules: module structure, service patterns, DTO rules, entity conventions, testing approach. Also documents how the API/worker start under Docker Compose."
       },
       {
         "path": "next-frontend/CLAUDE.md",
@@ -71,16 +54,8 @@
         "purpose": "Full OpenAPI spec of the backend API. Single source of truth for implemented endpoints and schemas."
       },
       {
-        "path": "docs/design-system-ai-implementable.md",
-        "purpose": "Design system tokens and component specs for the frontend, derived from the FC Tube Figma file. Reference when building UI screens."
-      },
-      {
         "path": "desafio/criterios-de-aceite.md",
-        "purpose": "Mandatory acceptance criteria for Phase 03 and causes for automatic rejection (e.g., skipping the planning workflow)."
-      },
-      {
-        "path": "desafio/regras.md",
-        "purpose": "Project rules: Definition of Done, Docker-only infra, library docs via context7, Git Flow, test file suffix conventions."
+        "purpose": "Mandatory acceptance criteria for Phase 03 and causes for automatic rejection."
       }
     ],
     "implementedFeatures": [
@@ -123,7 +98,7 @@
       },
       {
         "name": "Phase 03 — Video Upload & Processing (complete, merged to main)",
-        "summary": "End-to-end video pipeline across all 9 SIs: S3 multipart upload for files up to 10GB (initiate, presign-part, complete, abort), BullMQ video-processing queue, a dedicated FFmpeg worker container that extracts metadata (ffprobe) and generates a thumbnail (ffmpeg) then marks the video READY/FAILED, presigned-GET 302 redirects for streaming and download, and a public video-info endpoint. All SIs tested (unit + integration + E2E).",
+        "summary": "End-to-end video pipeline across all 9 SIs: S3 multipart upload for files up to 10GB (initiate, presign-part, complete, abort), BullMQ video-processing queue, a dedicated FFmpeg worker container that extracts metadata (ffprobe) and generates a thumbnail (ffmpeg) then marks the video READY/FAILED, presigned-GET 302 redirects for streaming and download, and a public video-info endpoint.",
         "mainFiles": [
           "nestjs-project/src/videos/controllers/videos.controller.ts",
           "nestjs-project/src/videos/services/videos.service.ts",
@@ -136,34 +111,48 @@
           "nestjs-project/Dockerfile.worker",
           "nestjs-project/compose.yaml"
         ],
-        "notes": "Video status model: DRAFT -> UPLOADING -> PROCESSING -> READY (or FAILED, with error_reason). publicId is an 11-char nanoid (varchar(11) column). VideoProcessor extends WorkerHost from @nestjs/bullmq v12 and routes by job.name; it is registered ONLY in WorkerModule (not VideosModule) to keep FFmpeg work out of the API process (TD-04). FfmpegService wraps child_process.execFile with an explicit Promise (not util.promisify) for testability. Stream/download use @Redirect + @Public with a dynamic presigned URL (302)."
+        "notes": "Video status model: DRAFT -> UPLOADING -> PROCESSING -> READY (or FAILED, with error_reason). publicId is an 11-char nanoid (varchar(11) column). VideoProcessor extends WorkerHost from @nestjs/bullmq v12 and routes by job.name; registered ONLY in WorkerModule. FfmpegService wraps child_process.execFile with an explicit Promise for testability. Stream/download use @Redirect + @Public with a dynamic presigned URL (302)."
       },
       {
-        "name": "task-startup-infra — Planning Artifacts (in progress, uncommitted)",
-        "summary": "Research, technical decisions, consolidated context and a clean validation for a Docker startup/infra reliability fix of the Phase 03 stack. Three decisions are finalized; implementation of the actual code/compose changes has not begun.",
+        "name": "task-startup-infra — Docker startup/infra reliability fix (implemented, committed)",
+        "summary": "Clean `docker compose up -d --build` is now operational from a fresh clone on any host. Delivered via 4 committed SIs: S3/Redis blocks in .env.example, a one-shot minio-init bucket-provisioning container, npm ci baked into images with node_modules isolated from the bind mount, and the worker's Video relation graph registered so its DataSource resolves relations.",
         "mainFiles": [
-          "docs/decisions/technical-decisions-startup-infra.md",
-          "docs/tasks/task-startup-infra/context.md",
-          "docs/tasks/task-startup-infra/validation.md"
+          "nestjs-project/compose.yaml",
+          "nestjs-project/Dockerfile.dev",
+          "nestjs-project/Dockerfile.worker",
+          "nestjs-project/src/worker.module.ts",
+          "nestjs-project/.env.example"
         ],
-        "notes": "TD-01: add a one-shot minio-init container (image with mc) that creates the $S3_BUCKET bucket idempotently (mc mb --ignore-existing); API and worker depend on it via condition: service_completed_successfully. TD-02: worker WorkerModule registers TypeOrmModule.forFeature([Video, Channel, User]) so the Video relation graph resolves in the worker's DataSource. TD-03: COPY package manifests + RUN npm ci inside Dockerfile.dev and Dockerfile.worker, plus an anonymous volume (- /home/node/app/node_modules) in compose.yaml so the source bind mount does not shadow the image's node_modules. Also add S3/Redis blocks to .env.example (hosts by Compose service name: minio, redis). Validation is clean (0 issues)."
+        "notes": "Commits c880433 (SI-1 .env.example S3/Redis), 0f5d099 (SI-2 minio-init one-shot container), b0f8644 (SI-3 npm ci in images + anonymous node_modules volume), d6afe2f (SI-4 WorkerModule TypeOrmModule.forFeature([Video, Channel, User]))."
+      },
+      {
+        "name": "task-presigned-url-public-endpoint — Presigned URL public endpoint fix (FULLY IMPLEMENTED, committed fa65e83)",
+        "summary": "Presigned S3/MinIO URLs (upload PUT, stream GET, download GET, thumbnail GET) are now signed with a configurable public endpoint so external clients (browser, frontend, host curl) can use them without curl --resolve. SI-1 added S3_PUBLIC_ENDPOINT env var + Joi validation + publicEndpoint config field. SI-2 added a dedicated presignerClient S3Client bound to publicEndpoint in StorageService; getPresignedPartUrl and getPresignedGetUrl now use presignerClient. Server-side send()-based ops (initiate, complete, abort, uploadFile, downloadFile) remain on the internal minio:9000 client. 197 unit+integration tests and 77 E2E tests all green.",
+        "mainFiles": [
+          "nestjs-project/src/config/s3.config.ts",
+          "nestjs-project/src/config/env.validation.ts",
+          "nestjs-project/.env.example",
+          "nestjs-project/.env",
+          "nestjs-project/src/videos/services/storage.service.ts",
+          "nestjs-project/src/videos/services/storage.service.spec.ts",
+          "nestjs-project/src/videos/services/storage.service.integration-spec.ts",
+          "docs/tasks/task-presigned-url-public-endpoint/progress.md"
+        ],
+        "notes": "publicEndpoint fallback chain: S3_PUBLIC_ENDPOINT || S3_ENDPOINT || 'http://minio:9000' — unset = zero-regression. MinIO validates SigV4 Host header so integration tests cannot rewrite URL hostnames for internal fetches; internalTestClient (S3Client pointing to minio:9000) is created in the integration spec for part uploads. Unit tests use direct config injection (provide: s3Config.KEY, useValue: ...) instead of process.env manipulation. S3_PUBLIC_ENDPOINT=http://localhost:9000 set in .env for local dev. Only remaining item: manual host-level acceptance test (presigned URLs reachable outside Docker without curl --resolve)."
       }
     ],
     "whereDevelopmentStopped": {
-      "inProgress": "On branch main with uncommitted planning artifacts for task-startup-infra. The planning pipeline (research -> context -> validation=clean) is complete; implementation of the startup/infra fix has not started. Phase 03 is fully implemented and merged.",
+      "inProgress": "On branch fix/minio-public-endpoint. task-presigned-url-public-endpoint is FULLY IMPLEMENTED (commit fa65e83): both SIs done, all tests green, tsc + lint clean. The only remaining item is a manual host-level acceptance check: verify presigned GET/PUT URLs work from outside Docker without curl --resolve. This branch is ready to merge to dev.",
       "nextSteps": [
-        "Create a fresh bugfix/* branch from the integration branch to implement task-startup-infra (do not commit directly to main).",
-        "Implement TD-01: add the one-shot minio-init service to nestjs-project/compose.yaml and wire API + worker depends_on with condition: service_completed_successfully.",
-        "Implement TD-02: change WorkerModule's TypeOrmModule.forFeature from [Video] to [Video, Channel, User] (add a WorkerModule compilation unit test).",
-        "Implement TD-03: add COPY package.json/package-lock.json + RUN npm ci to Dockerfile.dev and Dockerfile.worker, and add the anonymous node_modules volume to nestjs-api and nestjs-worker in compose.yaml.",
-        "Add the S3 and Redis variable blocks to nestjs-project/.env.example (service-name hosts).",
-        "Close out the Definition of Done: clean `docker compose up -d --build` (bucket created, worker initializes), full test suite green, npx tsc --noEmit = 0, npm run lint."
+        "Manual acceptance test: start the stack (`docker compose up -d --build`), create a video, call `GET /videos/:publicId/stream` and confirm the 302 redirect target (`http://localhost:9000/...`) loads in a browser/curl without --resolve.",
+        "Verify presign-part PUT: call `POST /videos/:publicId/upload/presign-part`, take the returned URL, and do a `curl -T <file>` without --resolve — should return 200.",
+        "Merge fix/minio-public-endpoint into dev following Git Flow, then merge dev into main when stable.",
+        "Next development phase: Phase 04 or frontend video upload/playback screens (next-frontend has no video UI yet)."
       ],
       "pendingTechnicalDebts": [
-        "task-startup-infra implementation is pending — only the planning docs exist; the compose.yaml, Dockerfile.dev, Dockerfile.worker, worker.module.ts and .env.example changes are not yet applied.",
-        "On a clean clone, `docker compose up` currently does not provision the MinIO bucket and the worker's DataSource fails to resolve Video relations (the exact problems task-startup-infra addresses).",
-        "Several integration specs (storage.service.integration-spec.ts) and MinIO/Redis-dependent E2E paths require running Docker containers and are skipped/mocked otherwise.",
-        "Frontend (next-frontend) has no video UI yet — upload/playback screens remain to be built in a later phase."
+        "Manual host-level acceptance test not yet executed (automated tests verify URL structure and SigV4 params but not actual outside-Docker reachability).",
+        "Frontend (next-frontend) has no video UI yet — upload/playback screens remain to be built in a later phase.",
+        "Several integration specs (storage.service.integration-spec.ts) and MinIO/Redis-dependent E2E paths require running Docker containers and are skipped/mocked otherwise."
       ]
     },
     "endpointsAndAPIs": {
@@ -179,12 +168,12 @@
         "POST /auth/logout — invalidate refresh token, clear cookies",
         "GET /auth/me — get current authenticated user info",
         "POST /videos — initiate video creation and multipart upload (SI-03.3)",
-        "POST /videos/:publicId/upload/presign-part — presign URL for a multipart upload part (SI-03.4)",
+        "POST /videos/:publicId/upload/presign-part — presign URL for a multipart upload part; URL now carries public endpoint (SI-03.4 + fix)",
         "POST /videos/:publicId/upload/complete — complete multipart upload & enqueue processing job (SI-03.6)",
         "POST /videos/:publicId/upload/abort — abort multipart upload, mark FAILED (SI-03.4)",
         "GET /videos/:publicId — public video metadata, status, channel info, thumbnail URL (SI-03.9)",
-        "GET /videos/:publicId/stream — 302 redirect to presigned GET URL for streaming (SI-03.8)",
-        "GET /videos/:publicId/download — 302 redirect to presigned GET URL with attachment header (SI-03.8)"
+        "GET /videos/:publicId/stream — 302 redirect to presigned GET URL for streaming; URL now carries public endpoint (SI-03.8 + fix)",
+        "GET /videos/:publicId/download — 302 redirect to presigned GET URL with attachment header; URL now carries public endpoint (SI-03.8 + fix)"
       ],
       "notImplemented": [
         "Comments, likes, subscriptions endpoints (future phases)",
@@ -197,61 +186,42 @@
       "nestjs-project/src/users/ — users module (entity, service)",
       "nestjs-project/src/channels/ — channels module (entity, service, nickname.util.ts)",
       "nestjs-project/src/videos/ — videos module: controllers/, services/ (videos, storage, ffmpeg), processors/ (video.processor.ts), entities/, dto/",
-      "nestjs-project/src/worker.main.ts + worker.module.ts — standalone worker entry point (NestFactory.createApplicationContext) and module",
-      "nestjs-project/src/mail/ — mail module (nodemailer-based, Handlebars templates)",
+      "nestjs-project/src/videos/services/storage.service.ts — S3/MinIO wrapper: internal client (send-based ops) + presignerClient (all presign sites); publicEndpoint from s3Config",
+      "nestjs-project/src/config/s3.config.ts — S3 config factory: endpoint, publicEndpoint (S3_PUBLIC_ENDPOINT || S3_ENDPOINT || fallback), region, bucket, credentials",
+      "nestjs-project/src/config/env.validation.ts — Joi schema including S3_PUBLIC_ENDPOINT: Joi.string().uri().optional()",
+      "nestjs-project/src/worker.main.ts + worker.module.ts — standalone worker entry point and module (registers Video+Channel+User via forFeature)",
       "nestjs-project/src/config/ — env validation + app/auth/database/mail/swagger/s3/redis configs",
       "nestjs-project/src/database/migrations/ — TypeORM migrations (users, auth tokens, videos)",
-      "nestjs-project/src/common/ — DomainException, filters, OpenAPI envelope DTO",
-      "nestjs-project/Dockerfile.dev + Dockerfile.worker — API and FFmpeg worker images",
-      "nestjs-project/compose.yaml — Docker Compose: nestjs-api, nestjs-worker, db (postgres:17), mailpit, redis, minio",
+      "nestjs-project/compose.yaml — Docker Compose: nestjs-api, nestjs-worker, db (postgres:17), mailpit, redis, minio, minio-init",
       "next-frontend/app/(auth)/ — auth route group: login, signup, forgot-password pages",
-      "next-frontend/components/ — auth/ form components and ui/ design-system primitives",
-      "next-frontend/lib/ — api/ (types.gen.ts, contracts, upstream), auth/ (session, refresh, error-mapping)",
-      "next-frontend/mocks/ — MSW handlers and server setup",
-      "docs/decisions/ — technical decision files (per phase + startup-infra)",
-      "docs/phases/ — phase planning artifacts (01, 02-auth, 02-auth-frontend, 03-videos)",
-      "docs/tasks/ — ad-hoc task artifacts (incl. task-startup-infra)",
-      "desafio/ — Phase 03 MBA challenge files (scope, workflow, requirements, acceptance criteria)"
+      "docs/decisions/ — technical decision files (per phase + ad-hoc tasks)",
+      "docs/tasks/task-presigned-url-public-endpoint/ — task plan, context, validation, progress for the completed fix",
+      "docs/phases/ — phase planning artifacts (01, 02-auth, 02-auth-frontend, 03-videos)"
     ],
     "usefulCommands": {
       "install": "cd nestjs-project && npm install; cd ../next-frontend && npm install",
       "build": "cd nestjs-project && npm run build",
-      "test_backend_unit": "cd nestjs-project && npm test",
-      "test_backend_integration": "cd nestjs-project && npm run test:integration",
-      "test_backend_e2e": "cd nestjs-project && npm run test:e2e",
-      "test_frontend_unit": "cd next-frontend && npx vitest run",
-      "test_frontend_e2e": "cd next-frontend && npx playwright test",
-      "lint_backend": "cd nestjs-project && npm run lint",
-      "lint_frontend": "cd next-frontend && npx eslint .",
-      "typecheck_backend": "cd nestjs-project && npx tsc --noEmit",
-      "typecheck_frontend": "cd next-frontend && npx tsc --noEmit",
+      "test_backend_unit_integration": "docker compose exec nestjs-api npm test -- --runInBand",
+      "test_backend_e2e": "docker compose exec nestjs-api npm run test:e2e",
+      "typecheck_backend": "docker compose exec nestjs-api npx tsc --noEmit",
+      "lint_backend": "docker compose exec nestjs-api npm run lint",
+      "docker_up": "cd nestjs-project && docker compose up -d --build",
       "migration_run": "cd nestjs-project && npm run migration:run",
-      "migration_generate": "cd nestjs-project && npm run migration:generate -- src/database/migrations/<MigrationName>",
-      "openapi_export": "cd nestjs-project && npm run openapi:export",
-      "start_api": "cd nestjs-project && npm run start:dev",
-      "start_worker": "cd nestjs-project && npm run start:worker",
-      "docker_up": "cd nestjs-project && docker compose up -d --build"
+      "openapi_export": "cd nestjs-project && npm run openapi:export"
     },
     "conventionsAndPatterns": [
-      "Docker Compose service names as hosts — never localhost/127.0.0.1 in config",
-      "`docker compose up` brings up infrastructure only; nestjs-api and nestjs-worker idle (tail -f /dev/null); the server, worker and migrations are manual steps (start:dev, start:worker, migration:run)",
-      "NestJS modules: one module per domain; TypeOrmModule.forFeature([Entity]) in each module; forRootAsync only at app/worker root (never in feature modules)",
-      "An entity is only discovered (even with autoLoadEntities: true) if some module registers it via forFeature — the root cause behind the worker entity-graph decision",
-      "NestJS services own only their domain's entities; cross-domain access via service injection, not direct repository access",
-      "Config: @nestjs/config with namespaced registerAs(name, () => ({...})) factories — one file per domain in src/config/",
+      "Docker Compose service names as hosts for container-to-container traffic — never localhost/127.0.0.1 in config; sole exception is S3_PUBLIC_ENDPOINT (the signed-URL host for clients OUTSIDE Docker), which server-side S3 calls never use",
+      "`docker compose up -d --build` now brings up the full stack from a clean clone (minio-init provisions the bucket, images carry node_modules via baked npm ci, worker resolves the Video relation graph)",
+      "NestJS modules: one module per domain; TypeOrmModule.forFeature([Entity]) in each module; forRootAsync only at app/worker root",
+      "Config: @nestjs/config with namespaced registerAs(name, () => ({...})) factories — one file per domain in src/config/; injected via ConfigType<typeof xxxConfig> + @Inject(xxxConfig.KEY)",
       "Env validation: Joi schema in src/config/env.validation.ts passed to ConfigModule.forRoot",
-      "DomainException (common/exceptions/domain.exception.ts) for business rule violations, caught by DomainExceptionFilter",
-      "All NestJS routes protected by JwtAuthGuard globally; use @Public() decorator to expose public routes (e.g. video info/stream/download)",
-      "BullMQ worker: VideoProcessor extends WorkerHost from @nestjs/bullmq and routes by job.name in a single process() method; registered only in WorkerModule",
-      "FFmpeg: thin child_process.execFile wrapper (FfmpegService) with an explicit Promise — no fluent-ffmpeg dependency",
-      "Test file suffixes: .spec.ts (unit), .integration-spec.ts (integration), .e2e-spec.ts (E2E) — Jest filters by regex; e2e runs in band",
-      "Next.js BFF pattern: client calls /api/* route handlers which forward to NestJS; client never calls NestJS directly",
-      "OpenAPI types: lib/api/types.gen.ts — regenerate after backend changes with openapi:export + openapi-typescript",
-      "MSW mocks: next-frontend/mocks/handlers/ — enabled via MSW_ENABLED=true env var (server-side MSW)",
-      "RHF + Zod for frontend forms; error mapping via lib/auth/error-mapping.ts",
+      "StorageService S3 client split: internal `client` (endpoint = minio:9000) for all send()-based ops; `presignerClient` (endpoint = config.publicEndpoint) for all getSignedUrl calls",
+      "S3_PUBLIC_ENDPOINT fallback chain: S3_PUBLIC_ENDPOINT || S3_ENDPOINT || 'http://minio:9000' — unset preserves current behavior",
+      "Test file suffixes: .spec.ts (unit), .integration-spec.ts (integration), .e2e-spec.ts (E2E) — Jest filters by regex; integration/e2e run with --runInBand",
+      "Unit tests for StorageService use direct config injection (provide: s3Config.KEY, useValue: ...) — not process.env manipulation — for determinism",
+      "Integration tests that need a part upload inside Docker use a locally-created internalTestClient (minio:9000) because MinIO validates SigV4 Host and presignedUrls carry localhost:9000",
       "Git Flow: feature/* and bugfix/* branches from dev, merge to dev; dev -> main when stable; never commit directly to main",
-      "Definition of Done: relevant + full test suite passes + tsc --noEmit exits 0 + npm run lint passes",
-      "Phase workflow is mandatory (research -> plan-context -> plan-validate -> plan-resolve -> plan-build -> implement); implementing without the research/planning artifacts is automatic rejection"
+      "Definition of Done: relevant + full test suite passes + tsc --noEmit exits 0 + npm run lint passes"
     ]
   }
 }
