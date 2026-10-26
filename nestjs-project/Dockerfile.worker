@@ -4,6 +4,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg procps c
 
 WORKDIR /home/node/app
 
+COPY --chown=node:node package.json package-lock.json ./
+
 USER node
+
+RUN npm ci
 
 CMD ["tail", "-f", "/dev/null"]

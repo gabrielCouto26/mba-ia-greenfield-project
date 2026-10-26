@@ -1,7 +1,7 @@
 # task-startup-infra — Progress
 
 **Status:** in_progress
-**Stages:** 2/4 completed
+**Stages:** 3/4 completed
 
 ### Stage 1 — Completar `.env.example` com blocos S3 e Redis
 - **Status:** completed
@@ -14,7 +14,9 @@
 - **Observations:** none
 
 ### Stage 3 — Isolar `node_modules` entre imagem e bind mount
-- **Status:** pending
+- **Status:** completed
+- **Tests:** no tests (Dockerfile/Compose change; validated by `docker compose config` — exit 0)
+- **Observations:** none
 
 ### Stage 4 — Registrar grafo de entidades do Video no worker
 - **Status:** pending
