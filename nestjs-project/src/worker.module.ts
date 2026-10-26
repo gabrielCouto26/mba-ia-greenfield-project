@@ -10,6 +10,8 @@ import mailConfig from './config/mail.config';
 import redisConfig from './config/redis.config';
 import s3Config from './config/s3.config';
 import { envValidationSchema } from './config/env.validation';
+import { Channel } from './channels/entities/channel.entity';
+import { User } from './users/entities/user.entity';
 import { Video } from './videos/entities/video.entity';
 import { VideoProcessor } from './videos/processors/video.processor';
 import { FfmpegService } from './videos/services/ffmpeg.service';
@@ -44,7 +46,7 @@ import { StorageService } from './videos/services/storage.service';
         synchronize: false,
       }),
     }),
-    TypeOrmModule.forFeature([Video]),
+    TypeOrmModule.forFeature([Video, Channel, User]),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [redisConfig.KEY],
