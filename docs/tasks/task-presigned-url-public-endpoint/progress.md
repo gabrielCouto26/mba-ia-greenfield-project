@@ -47,4 +47,4 @@ task: task-presigned-url-public-endpoint
 - [x] E2E tests pass (8 suites, 77 tests)
 - [x] TypeScript compiles cleanly (`npx tsc --noEmit` = 0 errors)
 - [x] Lint passes (`npm run lint` = 0 errors)
-- [ ] Manual: from the host (outside Docker), `GET /videos/:publicId/stream`, `/download`, thumbnail URL, and `presign-part` PUT open without `curl --resolve`
+- [x] Manual: from the host (outside Docker), `GET /videos/:publicId/stream`, `/download`, thumbnail URL, and `presign-part` PUT open without `curl --resolve`

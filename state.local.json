@@ -142,15 +142,12 @@
       }
     ],
     "whereDevelopmentStopped": {
-      "inProgress": "On branch fix/minio-public-endpoint. task-presigned-url-public-endpoint is FULLY IMPLEMENTED (commit fa65e83): both SIs done, all tests green, tsc + lint clean. The only remaining item is a manual host-level acceptance check: verify presigned GET/PUT URLs work from outside Docker without curl --resolve. This branch is ready to merge to dev.",
+      "inProgress": "On branch fix/minio-public-endpoint. task-presigned-url-public-endpoint is FULLY COMPLETE (commit fa65e83): both SIs done, all tests green, tsc + lint clean, and the manual host-level acceptance test passed on 2026-10-26. Presigned GET/PUT URLs (stream, download, thumbnail, upload part) all resolve via localhost:9000 without curl --resolve. Branch is ready to merge to dev.",
       "nextSteps": [
-        "Manual acceptance test: start the stack (`docker compose up -d --build`), create a video, call `GET /videos/:publicId/stream` and confirm the 302 redirect target (`http://localhost:9000/...`) loads in a browser/curl without --resolve.",
-        "Verify presign-part PUT: call `POST /videos/:publicId/upload/presign-part`, take the returned URL, and do a `curl -T <file>` without --resolve — should return 200.",
         "Merge fix/minio-public-endpoint into dev following Git Flow, then merge dev into main when stable.",
         "Next development phase: Phase 04 or frontend video upload/playback screens (next-frontend has no video UI yet)."
       ],
       "pendingTechnicalDebts": [
-        "Manual host-level acceptance test not yet executed (automated tests verify URL structure and SigV4 params but not actual outside-Docker reachability).",
         "Frontend (next-frontend) has no video UI yet — upload/playback screens remain to be built in a later phase.",
         "Several integration specs (storage.service.integration-spec.ts) and MinIO/Redis-dependent E2E paths require running Docker containers and are skipped/mocked otherwise."
       ]

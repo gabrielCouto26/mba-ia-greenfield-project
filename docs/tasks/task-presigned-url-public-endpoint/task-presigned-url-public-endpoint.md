@@ -93,4 +93,4 @@ SI-1 (root) — config publicEndpoint + env + Joi
 - [x] E2E tests pass (`docker compose exec nestjs-api npm run test:e2e`) — 8 suites, 77 tests
 - [x] TypeScript compiles cleanly (`docker compose exec nestjs-api npx tsc --noEmit`) — 0 errors
 - [x] Lint passes (`docker compose exec nestjs-api npm run lint`) — 0 errors
-- [ ] Manual: From the host (outside Docker), `GET /videos/:publicId/stream`, `/download`, and the `thumbnail_url` open without `curl --resolve`; `POST /videos/:publicId/upload/presign-part` + PUT succeed without `--resolve`
+- [x] Manual: From the host (outside Docker), `GET /videos/:publicId/stream`, `/download`, and the `thumbnail_url` open without `curl --resolve`; `POST /videos/:publicId/upload/presign-part` + PUT succeed without `--resolve`
