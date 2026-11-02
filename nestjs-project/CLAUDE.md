@@ -167,7 +167,7 @@ Module at `src/videos/` — multipart upload, video processing, streaming, and d
 | POST | `/videos/:publicId/upload/presign-part` | JWT | Presign a single upload part |
 | POST | `/videos/:publicId/upload/complete` | JWT | Complete multipart upload, enqueue processing |
 | POST | `/videos/:publicId/upload/abort` | JWT | Abort multipart upload |
-| GET | `/videos/:publicId` | Public | Get video metadata, status, channel info, thumbnail URL |
+| GET | `/videos/:publicId` | Public | Get public video info: `id`, `public_id`, `title`, `status`, `duration`, `thumbnail_url`, `created_at` |
 | GET | `/videos/:publicId/stream` | Public | 302 redirect to presigned S3 streaming URL |
 | GET | `/videos/:publicId/download` | Public | 302 redirect to presigned S3 download URL |
 

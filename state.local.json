@@ -1,9 +1,9 @@
 {
   "projectState": {
     "projectName": "StreamTube",
-    "lastUpdate": "2026-10-26",
-    "branch": "fix/minio-public-endpoint",
-    "overview": "StreamTube is a YouTube-like video sharing platform built as an MBA greenfield challenge. Monorepo with a NestJS 11 backend (nestjs-project/) and a Next.js 16 frontend (next-frontend/). Phases 01 (base config), 02 (auth — backend + frontend) and 03 (video upload and processing) are fully implemented, tested and merged into main. Phase 03 delivered all 9 Small Increments: Docker Compose infra (Redis + MinIO), the Video entity and migration, the full S3 multipart upload lifecycle (initiate, presign-part, abort, complete), the BullMQ video-processing queue, a dedicated FFmpeg worker container, video streaming/download via presigned-GET redirects, and the public video-info endpoint. The startup/infra reliability fix (task-startup-infra) and the presigned-URL public-endpoint fix (task-presigned-url-public-endpoint) have both been fully implemented and committed on this branch.",
+    "lastUpdate": "2026-11-02",
+    "branch": "fix/channel-info",
+    "overview": "StreamTube is a YouTube-like video sharing platform built as an MBA greenfield challenge. Monorepo with a NestJS 11 backend (nestjs-project/) and a Next.js 16 frontend (next-frontend/). Phases 01 (base config), 02 (auth — backend + frontend) and 03 (video upload and processing) are fully implemented, tested and merged into main. The current branch fix/channel-info delivered a documentation-only correction (COMPLETE): the prose route tables described GET /videos/:publicId as returning 'channel info', but the implementation (VideosService.findByPublicId) returns no channel data — only id, public_id, title, status, duration, thumbnail_url, created_at. The full project workflow was followed (research → plan → implement, artifacts under docs/research + docs/plans). The single functional edit is one line in nestjs-project/CLAUDE.md:170; openapi.json, the controller/service, and the phase-03 plan were already correct and untouched. No production code changes involved. Branch is ready to commit and merge.",
     "importantDocumentationFiles": [
       {
         "path": "CLAUDE.md",
@@ -12,6 +12,10 @@
       {
         "path": "docs/project-plan.md",
         "purpose": "Full project roadmap: all phases (01–05+), their scope, dependencies, and deliverables. Essential context for what has been built and what comes next."
+      },
+      {
+        "path": "docs/research/fix-channel-info-doc-research.md",
+        "purpose": "Research dossier for the CURRENT branch (fix/channel-info): confirms GET /videos/:publicId returns no channel data, pinpoints the only two 'channel info' occurrences (nestjs-project/CLAUDE.md:170 and state.local.json), confirms openapi.json and the phase-03 plan are already correct, and lays out the correction blueprint + open questions. Read before planning/implementing the doc fix."
       },
       {
         "path": "docs/tasks/task-presigned-url-public-endpoint/task-presigned-url-public-endpoint.md",
@@ -35,7 +39,7 @@
       },
       {
         "path": "docs/phases/phase-03-videos/phase-03-videos.md",
-        "purpose": "Executable plan for Phase 03 backend: all 9 Small Increments (SIs 03.1–03.9), Technical Specs (Data Model, API Contracts, Authorization Matrix, Error Catalog, Events/Messages), Dependency Map, and Deliverables."
+        "purpose": "Executable plan for Phase 03 backend: all 9 Small Increments (SIs 03.1–03.9), Technical Specs (Data Model, API Contracts, Authorization Matrix, Error Catalog, Events/Messages), Dependency Map, and Deliverables. NOTE: the GET /videos/:publicId API Contract (and SI-03.9) already lists exactly id, public_id, title, status, duration, thumbnail_url, created_at — no channel — so the plan is consistent with the code and needs no change."
       },
       {
         "path": "docs/phases/phase-03-videos/progress.md",
@@ -43,7 +47,7 @@
       },
       {
         "path": "nestjs-project/CLAUDE.md",
-        "purpose": "NestJS-specific conventions enforced by Claude rules: module structure, service patterns, DTO rules, entity conventions, testing approach. Also documents how the API/worker start under Docker Compose."
+        "purpose": "NestJS-specific conventions enforced by Claude rules: module structure, service patterns, DTO rules, entity conventions, testing approach. Also documents how the API/worker start under Docker Compose. The Videos Module → API Endpoints table (line 170) now describes GET /videos/:publicId with its real 7-field return (fixed on fix/channel-info)."
       },
       {
         "path": "next-frontend/CLAUDE.md",
@@ -51,7 +55,7 @@
       },
       {
         "path": "nestjs-project/openapi.json",
-        "purpose": "Full OpenAPI spec of the backend API. Single source of truth for implemented endpoints and schemas."
+        "purpose": "Full OpenAPI spec of the backend API. Single source of truth for implemented endpoints and schemas. GET /videos/{publicId} 200 response already lists exactly id, public_id, title, status, duration, thumbnail_url, created_at (no channel) — already correct."
       },
       {
         "path": "desafio/criterios-de-aceite.md",
@@ -111,7 +115,7 @@
           "nestjs-project/Dockerfile.worker",
           "nestjs-project/compose.yaml"
         ],
-        "notes": "Video status model: DRAFT -> UPLOADING -> PROCESSING -> READY (or FAILED, with error_reason). publicId is an 11-char nanoid (varchar(11) column). VideoProcessor extends WorkerHost from @nestjs/bullmq v12 and routes by job.name; registered ONLY in WorkerModule. FfmpegService wraps child_process.execFile with an explicit Promise for testability. Stream/download use @Redirect + @Public with a dynamic presigned URL (302)."
+        "notes": "Video status model: DRAFT -> UPLOADING -> PROCESSING -> READY (or FAILED, with error_reason). publicId is an 11-char nanoid (varchar(11) column). VideoProcessor extends WorkerHost from @nestjs/bullmq v12 and routes by job.name; registered ONLY in WorkerModule. FfmpegService wraps child_process.execFile with an explicit Promise for testability. Stream/download use @Redirect + @Public with a dynamic presigned URL (302). GET /videos/:publicId (findByPublicId) returns ONLY id, public_id, title, status, duration, thumbnail_url, created_at — it does NOT load or return any channel data (no relations in the findOne query)."
       },
       {
         "name": "task-startup-infra — Docker startup/infra reliability fix (implemented, committed)",
@@ -126,7 +130,7 @@
         "notes": "Commits c880433 (SI-1 .env.example S3/Redis), 0f5d099 (SI-2 minio-init one-shot container), b0f8644 (SI-3 npm ci in images + anonymous node_modules volume), d6afe2f (SI-4 WorkerModule TypeOrmModule.forFeature([Video, Channel, User]))."
       },
       {
-        "name": "task-presigned-url-public-endpoint — Presigned URL public endpoint fix (FULLY IMPLEMENTED, committed fa65e83)",
+        "name": "task-presigned-url-public-endpoint — Presigned URL public endpoint fix (FULLY IMPLEMENTED, committed fa65e83; merged context)",
         "summary": "Presigned S3/MinIO URLs (upload PUT, stream GET, download GET, thumbnail GET) are now signed with a configurable public endpoint so external clients (browser, frontend, host curl) can use them without curl --resolve. SI-1 added S3_PUBLIC_ENDPOINT env var + Joi validation + publicEndpoint config field. SI-2 added a dedicated presignerClient S3Client bound to publicEndpoint in StorageService; getPresignedPartUrl and getPresignedGetUrl now use presignerClient. Server-side send()-based ops (initiate, complete, abort, uploadFile, downloadFile) remain on the internal minio:9000 client. 197 unit+integration tests and 77 E2E tests all green.",
         "mainFiles": [
           "nestjs-project/src/config/s3.config.ts",
@@ -138,16 +142,18 @@
           "nestjs-project/src/videos/services/storage.service.integration-spec.ts",
           "docs/tasks/task-presigned-url-public-endpoint/progress.md"
         ],
-        "notes": "publicEndpoint fallback chain: S3_PUBLIC_ENDPOINT || S3_ENDPOINT || 'http://minio:9000' — unset = zero-regression. MinIO validates SigV4 Host header so integration tests cannot rewrite URL hostnames for internal fetches; internalTestClient (S3Client pointing to minio:9000) is created in the integration spec for part uploads. Unit tests use direct config injection (provide: s3Config.KEY, useValue: ...) instead of process.env manipulation. S3_PUBLIC_ENDPOINT=http://localhost:9000 set in .env for local dev. Only remaining item: manual host-level acceptance test (presigned URLs reachable outside Docker without curl --resolve)."
+        "notes": "publicEndpoint fallback chain: S3_PUBLIC_ENDPOINT || S3_ENDPOINT || 'http://minio:9000' — unset = zero-regression. MinIO validates SigV4 Host header so integration tests cannot rewrite URL hostnames for internal fetches; internalTestClient (S3Client pointing to minio:9000) is created in the integration spec for part uploads. Unit tests use direct config injection (provide: s3Config.KEY, useValue: ...) instead of process.env manipulation. S3_PUBLIC_ENDPOINT=http://localhost:9000 set in .env for local dev. Manual host-level acceptance test passed 2026-10-26."
       }
     ],
     "whereDevelopmentStopped": {
-      "inProgress": "On branch fix/minio-public-endpoint. task-presigned-url-public-endpoint is FULLY COMPLETE (commit fa65e83): both SIs done, all tests green, tsc + lint clean, and the manual host-level acceptance test passed on 2026-10-26. Presigned GET/PUT URLs (stream, download, thumbnail, upload part) all resolve via localhost:9000 without curl --resolve. Branch is ready to merge to dev.",
+      "inProgress": "On branch fix/channel-info (branched off 59639db). The documentation-only correction is COMPLETE via the full workflow: docs/research/fix-channel-info-doc-research.md (research), docs/plans/fix-channel-info-doc-plan.md (plan), docs/plans/progress-fix-channel-info-doc.md (progress, all 3 stages passed). The single functional edit is nestjs-project/CLAUDE.md:170, now describing GET /videos/:publicId with its real 7-field return. openapi.json, the controller/service, and the phase-03 plan were already correct and left untouched. Remaining 'channel info' grep hits are only meta-references in the workflow docs and this state file describing the fix. Branch is ready to commit and merge.",
       "nextSteps": [
-        "Merge fix/minio-public-endpoint into dev following Git Flow, then merge dev into main when stable.",
-        "Next development phase: Phase 04 or frontend video upload/playback screens (next-frontend has no video UI yet)."
+        "Commit the change on fix/channel-info (doc correction + workflow artifacts + this state snapshot).",
+        "Merge fix/channel-info following Git Flow (into dev, then dev -> main when stable).",
+        "Then continue with Phase 04 or frontend video upload/playback screens (next-frontend has no video UI yet)."
       ],
       "pendingTechnicalDebts": [
+        "SI numbering mismatch in docs/phases/phase-03-videos/phase-03-videos.md (registered 2026-11-02, out of scope for fix/channel-info): the GET /videos/:publicId route is labeled (SI-03.7) in the API Contracts header (phase-03-videos.md:435) but SI-03.9 in the SI list (phase-03-videos.md:271 and the Deliverables checklist at :531). Same route, cosmetic cross-reference inconsistency — no impact on code, openapi.json or behavior. Fix is a one-character edit (7 -> 9 at line 435) and deserves its own docs/* commit; do NOT bundle it into the channel-info fix.",
         "Frontend (next-frontend) has no video UI yet — upload/playback screens remain to be built in a later phase.",
         "Several integration specs (storage.service.integration-spec.ts) and MinIO/Redis-dependent E2E paths require running Docker containers and are skipped/mocked otherwise."
       ]
@@ -168,7 +174,7 @@
         "POST /videos/:publicId/upload/presign-part — presign URL for a multipart upload part; URL now carries public endpoint (SI-03.4 + fix)",
         "POST /videos/:publicId/upload/complete — complete multipart upload & enqueue processing job (SI-03.6)",
         "POST /videos/:publicId/upload/abort — abort multipart upload, mark FAILED (SI-03.4)",
-        "GET /videos/:publicId — public video metadata, status, channel info, thumbnail URL (SI-03.9)",
+        "GET /videos/:publicId — public video info; returns id, public_id, title, status, duration, thumbnail_url (presigned, nullable), created_at. Does NOT return channel data (SI-03.9)",
         "GET /videos/:publicId/stream — 302 redirect to presigned GET URL for streaming; URL now carries public endpoint (SI-03.8 + fix)",
         "GET /videos/:publicId/download — 302 redirect to presigned GET URL with attachment header; URL now carries public endpoint (SI-03.8 + fix)"
       ],
@@ -183,6 +189,7 @@
       "nestjs-project/src/users/ — users module (entity, service)",
       "nestjs-project/src/channels/ — channels module (entity, service, nickname.util.ts)",
       "nestjs-project/src/videos/ — videos module: controllers/, services/ (videos, storage, ffmpeg), processors/ (video.processor.ts), entities/, dto/",
+      "nestjs-project/src/videos/services/videos.service.ts — findByPublicId (lines ~128-155) returns 7 fields, no channel; create/presignPart/completeUpload/abortUpload with channel ownership checks",
       "nestjs-project/src/videos/services/storage.service.ts — S3/MinIO wrapper: internal client (send-based ops) + presignerClient (all presign sites); publicEndpoint from s3Config",
       "nestjs-project/src/config/s3.config.ts — S3 config factory: endpoint, publicEndpoint (S3_PUBLIC_ENDPOINT || S3_ENDPOINT || fallback), region, bucket, credentials",
       "nestjs-project/src/config/env.validation.ts — Joi schema including S3_PUBLIC_ENDPOINT: Joi.string().uri().optional()",
@@ -191,6 +198,7 @@
       "nestjs-project/src/database/migrations/ — TypeORM migrations (users, auth tokens, videos)",
       "nestjs-project/compose.yaml — Docker Compose: nestjs-api, nestjs-worker, db (postgres:17), mailpit, redis, minio, minio-init",
       "next-frontend/app/(auth)/ — auth route group: login, signup, forgot-password pages",
+      "docs/research/ — research dossiers (fix-channel-info-doc-research.md for the current branch)",
       "docs/decisions/ — technical decision files (per phase + ad-hoc tasks)",
       "docs/tasks/task-presigned-url-public-endpoint/ — task plan, context, validation, progress for the completed fix",
       "docs/phases/ — phase planning artifacts (01, 02-auth, 02-auth-frontend, 03-videos)"
@@ -204,7 +212,8 @@
       "lint_backend": "docker compose exec nestjs-api npm run lint",
       "docker_up": "cd nestjs-project && docker compose up -d --build",
       "migration_run": "cd nestjs-project && npm run migration:run",
-      "openapi_export": "cd nestjs-project && npm run openapi:export"
+      "openapi_export": "cd nestjs-project && npm run openapi:export",
+      "verify_channel_info_removed": "grep -rn 'channel info' --include='*.md' --include='*.json' --include='*.ts' . | grep -v node_modules"
     },
     "conventionsAndPatterns": [
       "Docker Compose service names as hosts for container-to-container traffic — never localhost/127.0.0.1 in config; sole exception is S3_PUBLIC_ENDPOINT (the signed-URL host for clients OUTSIDE Docker), which server-side S3 calls never use",
@@ -217,8 +226,10 @@
       "Test file suffixes: .spec.ts (unit), .integration-spec.ts (integration), .e2e-spec.ts (E2E) — Jest filters by regex; integration/e2e run with --runInBand",
       "Unit tests for StorageService use direct config injection (provide: s3Config.KEY, useValue: ...) — not process.env manipulation — for determinism",
       "Integration tests that need a part upload inside Docker use a locally-created internalTestClient (minio:9000) because MinIO validates SigV4 Host and presignedUrls carry localhost:9000",
+      "Documentation must describe the real API contract: GET /videos/:publicId returns 7 fields and no channel data — keep prose route tables aligned with openapi.json and the phase-03 plan",
+      "Project workflow for any change (incl. doc fixes): research → planning → implement, with artifacts under docs/ before touching targets — skipping it is an automatic-rejection criterion of the MBA challenge",
       "Git Flow: feature/* and bugfix/* branches from dev, merge to dev; dev -> main when stable; never commit directly to main",
-      "Definition of Done: relevant + full test suite passes + tsc --noEmit exits 0 + npm run lint passes"
+      "Definition of Done: relevant + full test suite passes + tsc --noEmit exits 0 + npm run lint passes (for changes that touch code)"
     ]
   }
 }
