@@ -86,7 +86,7 @@
           "nestjs-project/src/channels/",
           "nestjs-project/src/mail/"
         ],
-        "notes": "JWT stored in HttpOnly cookies. Refresh token rotation implemented. Channel nickname derived from email prefix. ChannelsService owns channel creation; UsersService compensates by deleting user if channel creation fails. Public decorator skips JWT guard. DomainException with custom filter."
+        "notes": "Backend login/refresh return access_token + refresh_token in the JSON response body; the NestJS API sets no cookies. The HttpOnly cookie is held by the Next.js BFF (iron-session), not the API. Refresh token rotation implemented. Channel nickname derived from email prefix. ChannelsService owns channel creation; UsersService compensates by deleting user if channel creation fails. Public decorator skips JWT guard. DomainException with custom filter."
       },
       {
         "name": "Phase 02 — Auth Frontend (Next.js)",
@@ -102,7 +102,7 @@
       },
       {
         "name": "Phase 03 — Video Upload & Processing (complete, merged to main)",
-        "summary": "End-to-end video pipeline across all 9 SIs: S3 multipart upload for files up to 10GB (initiate, presign-part, complete, abort), BullMQ video-processing queue, a dedicated FFmpeg worker container that extracts metadata (ffprobe) and generates a thumbnail (ffmpeg) then marks the video READY/FAILED, presigned-GET 302 redirects for streaming and download, and a public video-info endpoint.",
+        "summary": "End-to-end video pipeline across all 9 SIs: S3 multipart upload for files up to 10GB (initiate, presign-part, complete, abort), BullMQ video-processing queue, a dedicated FFmpeg worker container that extracts metadata (ffprobe) and generates a thumbnail (ffmpeg) then marks the video READY/ERROR, presigned-GET 302 redirects for streaming and download, and a public video-info endpoint.",
         "mainFiles": [
           "nestjs-project/src/videos/controllers/videos.controller.ts",
           "nestjs-project/src/videos/services/videos.service.ts",
@@ -115,7 +115,7 @@
           "nestjs-project/Dockerfile.worker",
           "nestjs-project/compose.yaml"
         ],
-        "notes": "Video status model: DRAFT -> UPLOADING -> PROCESSING -> READY (or FAILED, with error_reason). publicId is an 11-char nanoid (varchar(11) column). VideoProcessor extends WorkerHost from @nestjs/bullmq v12 and routes by job.name; registered ONLY in WorkerModule. FfmpegService wraps child_process.execFile with an explicit Promise for testability. Stream/download use @Redirect + @Public with a dynamic presigned URL (302). GET /videos/:publicId (findByPublicId) returns ONLY id, public_id, title, status, duration, thumbnail_url, created_at — it does NOT load or return any channel data (no relations in the findOne query)."
+        "notes": "Video status model (enum values: draft, processing, ready, error): create -> DRAFT; completeUpload -> PROCESSING; worker -> READY or ERROR (with error_reason). There is no UPLOADING or FAILED state. publicId is an 11-char nanoid (varchar(11) column). VideoProcessor extends WorkerHost from @nestjs/bullmq v12 and routes by job.name; registered ONLY in WorkerModule. FfmpegService wraps child_process.execFile with an explicit Promise for testability. Stream/download use @Redirect + @Public with a dynamic presigned URL (302). GET /videos/:publicId (findByPublicId) returns ONLY id, public_id, title, status, duration, thumbnail_url, created_at — it does NOT load or return any channel data (no relations in the findOne query)."
       },
       {
         "name": "task-startup-infra — Docker startup/infra reliability fix (implemented, committed)",
@@ -164,7 +164,7 @@
         "POST /auth/register — register new user (creates user + channel, sends confirmation email)",
         "GET /auth/confirm-email?token= — confirm email with verification token",
         "POST /auth/resend-confirmation — resend confirmation email",
-        "POST /auth/login — login, returns JWT access token in cookie",
+        "POST /auth/login — login, returns access_token + refresh_token in the JSON response body (the NestJS API sets no cookies)",
         "POST /auth/refresh — refresh access token using refresh token cookie",
         "POST /auth/forgot-password — request password reset email",
         "POST /auth/reset-password — reset password with token",
@@ -173,7 +173,7 @@
         "POST /videos — initiate video creation and multipart upload (SI-03.3)",
         "POST /videos/:publicId/upload/presign-part — presign URL for a multipart upload part; URL now carries public endpoint (SI-03.4 + fix)",
         "POST /videos/:publicId/upload/complete — complete multipart upload & enqueue processing job (SI-03.6)",
-        "POST /videos/:publicId/upload/abort — abort multipart upload, mark FAILED (SI-03.4)",
+        "POST /videos/:publicId/upload/abort — abort multipart upload; clears upload_id without changing status, returns 204 (SI-03.4)",
         "GET /videos/:publicId — public video info; returns id, public_id, title, status, duration, thumbnail_url (presigned, nullable), created_at. Does NOT return channel data (SI-03.9)",
         "GET /videos/:publicId/stream — 302 redirect to presigned GET URL for streaming; URL now carries public endpoint (SI-03.8 + fix)",
         "GET /videos/:publicId/download — 302 redirect to presigned GET URL with attachment header; URL now carries public endpoint (SI-03.8 + fix)"

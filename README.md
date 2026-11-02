@@ -137,11 +137,11 @@ Pipeline completo de upload e processamento:
 | `POST /videos/:publicId/upload/presign-part` | JWT | Presigna URL para uma parte do upload |
 | `POST /videos/:publicId/upload/complete` | JWT | Conclui o multipart upload e enfileira processamento |
 | `POST /videos/:publicId/upload/abort` | JWT | Cancela o multipart upload |
-| `GET /videos/:publicId` | Público | Metadados, status, canal e thumbnail URL |
+| `GET /videos/:publicId` | Público | Info pública do vídeo: `id`, `public_id`, `title`, `status`, `duration`, `thumbnail_url`, `created_at` |
 | `GET /videos/:publicId/stream` | Público | Redirect 302 para URL presignada de streaming |
 | `GET /videos/:publicId/download` | Público | Redirect 302 para URL presignada de download |
 
-O status do vídeo segue o ciclo: `DRAFT → UPLOADING → PROCESSING → READY` (ou `FAILED`). O worker processa o vídeo com `ffprobe` (metadados) e `ffmpeg` (thumbnail) em container separado.
+O status do vídeo segue o ciclo: `DRAFT → PROCESSING → READY` (ou `ERROR`). O worker processa o vídeo com `ffprobe` (metadados) e `ffmpeg` (thumbnail) em container separado.
 
 As URLs presignadas são geradas com o endpoint público configurado em `S3_PUBLIC_ENDPOINT`, permitindo acesso direto ao MinIO fora do Docker sem `--resolve`.
 
